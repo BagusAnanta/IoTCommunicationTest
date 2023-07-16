@@ -13,18 +13,30 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bsoftware.iotcommunicationtest.BluetoothConnection.ConnectionThread;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 @RequiresApi(api = Build.VERSION_CODES.S)
 public class BluetoothSerialTest extends AppCompatActivity {
@@ -34,6 +46,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
             Manifest.permission.BLUETOOTH,
             Manifest.permission.BLUETOOTH_ADMIN,
             Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.BLUETOOTH_SCAN,
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION
     };
@@ -69,16 +82,44 @@ public class BluetoothSerialTest extends AppCompatActivity {
     BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     private int REQUEST_ENABLE_BT = 1;
 
+    TextView resultTextView;
+
+    private String deviceName;
+    private String deviceHardwareAddress;
+    private StringBuilder dataBuffer = new StringBuilder();
+
+    private BluetoothSocket bluetoothSocket;
+    private OutputStream outputStream;
+    private InputStream inputStream;
+
+    private final String SPP_UUID = "00001101-0000-1000-8000-00805F9B34FB";
+
+    private final Handler handler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(@NonNull Message message) {
+            if (message.what == MESSAGE_READ) {
+                String receiverMessage = message.obj.toString();
+                dataBuffer.append(receiverMessage);
+            }
+            return true;
+        }
+    });
+
+    private static final int MESSAGE_READ = 0;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth_serial_test);
 
+        resultTextView = findViewById(R.id.testTextView);
+
         // permission
         permissionList.addAll(Arrays.asList(permission));
         tellPermission(permissionList);
         initBluetooth();
+
     }
 
     private void tellPermission(@NonNull ArrayList<String> permissionList) {
@@ -133,9 +174,105 @@ public class BluetoothSerialTest extends AppCompatActivity {
                     return;
                 }
                 startActivityForResult(enableBluetooth, REQUEST_ENABLE_BT);
+                scanBluetoothAddress();
+            } else {
+                // if bluetooth enable
+                scanBluetoothAddress();
+            }
+        }
+
+    }
+
+    private void scanBluetoothAddress() {
+        Intent dataName = new Intent();
+        Intent dataAddress = new Intent();
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        Set<BluetoothDevice> pairDevice = bluetoothAdapter.getBondedDevices();
+        if (pairDevice.size() > 0) {
+            for (BluetoothDevice device : pairDevice) {
+                deviceName = device.getName();
+                deviceHardwareAddress = device.getAddress();
+
+                Log.d("Bluetooth Name :", deviceName);
+                Log.d("Bluetooth Address :", deviceHardwareAddress);
+
+                if (deviceName.equals("AMBULANCE POLSRI") && deviceHardwareAddress.equals("3C:61:05:3F:61:16")) {
+                    connectFromAddressandName();
+                }
             }
         }
     }
 
+    private void connectFromAddressandName() {
 
+        Log.d("DataIntent Name", deviceName);
+        Log.d("DataIntent Address", deviceHardwareAddress);
+
+        // we connect a device use Address
+        BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceHardwareAddress);
+
+        try {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+              return;
+            }
+            bluetoothSocket = device.createRfcommSocketToServiceRecord(UUID.fromString(SPP_UUID));
+            bluetoothSocket.connect();
+            outputStream = bluetoothSocket.getOutputStream();
+            inputStream = bluetoothSocket.getInputStream();
+
+            // start read data
+            startReadData();
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Log.d("Connection Statue","Connecting into ESP32");
+                }
+            });
+        } catch (IOException e) {
+            Log.e("Connection Statue","Fail to connection",e);
+            finish();
+        }
+
+    }
+
+    private void startReadData(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                byte[] buffer = new byte[1024];
+                int bytes;
+
+                while(true){
+                    try{
+                        bytes = inputStream.read(buffer);
+                        String receiverMessage = new String(buffer,0,bytes);
+                        char[] toChardata = receiverMessage.toCharArray();
+                        Log.d("Message", receiverMessage);
+                        Log.d("Message Array", receiverMessage);
+                        handler.obtainMessage(MESSAGE_READ,bytes,-1,receiverMessage).sendToTarget();
+                    } catch (IOException e) {
+                        Log.e("InputStream Connection","InputStream Connection fail",e);
+                        break;
+                    }
+                }
+            }
+        }).start();
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(bluetoothSocket != null){
+            try{
+                bluetoothSocket.close();
+            } catch (IOException e) {
+                Log.e("Bluetooth Destroy","Fail close a socket",e);
+            }
+        }
+    }
 }
