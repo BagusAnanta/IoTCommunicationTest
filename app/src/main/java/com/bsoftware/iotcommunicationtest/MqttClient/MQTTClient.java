@@ -16,28 +16,37 @@ public class MQTTClient{
     private String ClientID;
 
 
+    MqttAndroidClient mqttClient = new MqttAndroidClient(context,BrokerURI,ClientID);
+
     public MQTTClient(Context context, String BrokerURI, String ClientID){
         this.context = context;
         this.BrokerURI = BrokerURI;
         this.ClientID = ClientID;
+
     }
 
-    private MqttAndroidClient mqttClient = new MqttAndroidClient(context,BrokerURI,ClientID);
-
-    private void connection(IMqttActionListener callbackConnection){
+    private void connection(){
         MqttConnectOptions option = new MqttConnectOptions();
         option.setCleanSession(true);
 
         try{
-            mqttClient.connect(option);
+            try {
+                mqttClient.connect(option);
+            } catch (NullPointerException e){
+                Log.d("MqttClientNPE", e.toString());
+            }
         } catch (MqttException e) {
             e.printStackTrace();
         }
     }
 
-    private void publish(String topic,String messageData, int Qos,IMqttActionListener callbackPublish){
+    private void publish(String topic,String messageData, int Qos){
         try{
-           mqttClient.publish(topic,messageData.getBytes(),Qos,false);
+          try{
+              mqttClient.publish(topic,messageData.getBytes(),Qos,false);
+          } catch (NullPointerException e){
+              Log.d("MqttClientNPE", e.toString());
+          }
         } catch (MqttException e){
             e.printStackTrace();
         }
@@ -52,37 +61,10 @@ public class MQTTClient{
     }
 
     public MQTTClient onMqttStartedAndPublisher(String topic, String messageData, int Qos){
-        connection(new IMqttActionListener() {
-            @Override
-            public void onSuccess(IMqttToken asyncActionToken) {
-                Log.d("onConnectionSuccess", "Mqtt Success");
-            }
-
-            @Override
-            public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                Log.e("onConnectionFail","Mqtt Fail because exception" + exception);
-            }
-        });
+        connection();
 
         // publish
-        publish(
-                topic,
-                messageData,
-                Qos,
-                new IMqttActionListener() {
-                    @Override
-                    public void onSuccess(IMqttToken asyncActionToken) {
-                        Log.d("Publish Success","Message Publish Successfully");
-                        Toast.makeText(context, "Published Successfully", Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                        Log.e("Publish Fail", "Message Publisher Failed");
-                        Toast.makeText(context, "Publish Fail", Toast.LENGTH_SHORT).show();
-                    }
-                }
-        );
+        publish(topic, messageData, Qos);
         return null;
     }
 }

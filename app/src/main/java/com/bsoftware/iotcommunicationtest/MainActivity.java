@@ -28,7 +28,15 @@ import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bsoftware.iotcommunicationtest.MqttClient.MQTTClient;
+import org.eclipse.paho.android.service.MqttAndroidClient;
+import org.eclipse.paho.client.mqttv3.IMqttActionListener;
+import org.eclipse.paho.client.mqttv3.IMqttToken;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import java.util.UUID;
 
@@ -50,6 +58,18 @@ public class MainActivity extends AppCompatActivity {
 
     private int currentConnectionAttemp = 1;
     private final int MAXIMUM_CONNECTION_ATTEMPTS = 5;
+
+    // MQTT Identified Data
+    String BrokerURI = "tcp://test.mosquitto.org:1883";
+    String Topic = "ambulance/cabin";
+    String Message = "Halo Disana !";
+    String ClientID = "mqttv311";
+    int Qos = 0;
+
+    String clientId = MqttClient.generateClientId();
+    MqttAndroidClient mqttAndroidClient = new MqttAndroidClient(this,BrokerURI,clientId);
+
+
 
     // scan bluetooth
     private final ScanCallback scanCallback = new ScanCallback() {
@@ -173,14 +193,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         valueTextView = findViewById(R.id.testTextView);
-        String BrokerURI = "tcp://test.mosquitto.org:1883";
-        String Topic = "ambulance/cabin";
-        String Message = "Halo Disana !";
-        String ClientID = "mqttv311";
-        int Qos = 0;
+
 
         // Mqtt Tester
-        MQTTClient mqttClient = new MQTTClient(this,BrokerURI,ClientID).onMqttStartedAndPublisher(Topic,Message,Qos);
+
 
         if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.BLUETOOTH_CONNECT},REQUEST_BLUETOOTH_CONNECTION);
@@ -237,7 +253,7 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
         } else {
             // connectionIntoDevice
-            connectionToDevice();
+            // connectionToDevice();
             startReceiving();
         }
     }
@@ -258,5 +274,53 @@ public class MainActivity extends AppCompatActivity {
             bluetoothGatt.disconnect();
             bluetoothGatt.close();
         }
+    }
+
+    // MQTT Code
+    private void connectMqtt(){
+        try {
+            mqttAndroidClient.connect().setActionCallback(new IMqttActionListener() {
+                @Override
+                public void onSuccess(IMqttToken asyncActionToken) {
+                    Log.d("onConnectionSuccess","Connection Success");
+                }
+
+                @Override
+                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                    Log.e("onConnectionFail","Connection Fail");
+                }
+            });
+        } catch (MqttException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void disconnectMqtt(){
+      try {
+          mqttAndroidClient.disconnect().setActionCallback(new IMqttActionListener() {
+              @Override
+              public void onSuccess(IMqttToken asyncActionToken) {
+                  Log.d("onDisconnectSuccess","Disconnect Success");
+              }
+
+              @Override
+              public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                  Log.e("onDisconnectFail","Disconnect Fail");
+              }
+          });
+      } catch (MqttException e) {
+          throw new RuntimeException(e);
+      }
+    }
+
+    private void publishMqtt(String messageData, String Topic){
+       try{
+           MqttMessage message = new MqttMessage(messageData.toString().getBytes());
+           mqttAndroidClient.publish(Topic,message);
+       } catch (MqttPersistenceException e) {
+           throw new RuntimeException(e);
+       } catch (MqttException e) {
+           throw new RuntimeException(e);
+       }
     }
 }
