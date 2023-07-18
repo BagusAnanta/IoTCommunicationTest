@@ -28,12 +28,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bsoftware.iotcommunicationtest.BluetoothConnection.ConnectionThread;
+import com.hivemq.client.mqtt.MqttClient;
+import com.hivemq.client.mqtt.datatypes.MqttQos;
+import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -48,7 +52,8 @@ public class BluetoothSerialTest extends AppCompatActivity {
             Manifest.permission.BLUETOOTH_CONNECT,
             Manifest.permission.BLUETOOTH_SCAN,
             Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.INTERNET
     };
     int permission_count = 0;
 
@@ -94,18 +99,38 @@ public class BluetoothSerialTest extends AppCompatActivity {
 
     private final String SPP_UUID = "00001101-0000-1000-8000-00805F9B34FB";
 
+
+    private static final int MESSAGE_READ = 0;
+
+    private String FinalText;
+
+    private static final String BrokerURI = "tcp://test.mosquitto.org:1883";
+    private static final String ClientID = "mqttv311";
+    private static final String Topic = "ambulance/cabin";
+    private MqttHandler mqttHandler;
+
     private final Handler handler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(@NonNull Message message) {
             if (message.what == MESSAGE_READ) {
                 String receiverMessage = message.obj.toString();
-                dataBuffer.append(receiverMessage);
+                String FinalText = String.valueOf(dataBuffer.append(receiverMessage));
+                resultTextView.setText(dataBuffer.append(receiverMessage));
+                publishMessage(Topic,FinalText);
+                // MqttFunction(String.valueOf(dataBuffer.append(receiverMessage)));
+                /*boolean isLive = true;
+
+                if(!resultTextView.toString().isEmpty() && isLive == true){
+                    dataBuffer.setLength(0);
+                    String resultdata = dataBuffer.toString();
+                    // update data
+                    resultTextView.setText(resultdata);
+                }*/
+
             }
             return true;
         }
     });
-
-    private static final int MESSAGE_READ = 0;
 
 
     @Override
@@ -119,6 +144,12 @@ public class BluetoothSerialTest extends AppCompatActivity {
         permissionList.addAll(Arrays.asList(permission));
         tellPermission(permissionList);
         initBluetooth();
+        getFinalText();
+
+        // Mqtt Test
+        mqttHandler = new MqttHandler();
+        mqttHandler.connect(BrokerURI,ClientID);
+
 
     }
 
@@ -246,21 +277,90 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 byte[] buffer = new byte[1024];
                 int bytes;
 
-                while(true){
-                    try{
+                while(true) {
+                    try {
                         bytes = inputStream.read(buffer);
-                        String receiverMessage = new String(buffer,0,bytes);
-                        char[] toChardata = receiverMessage.toCharArray();
+                        String receiverMessage = new String(buffer, 0,bytes);
                         Log.d("Message", receiverMessage);
-                        Log.d("Message Array", receiverMessage);
-                        handler.obtainMessage(MESSAGE_READ,bytes,-1,receiverMessage).sendToTarget();
+                        StringBuilder fullsentence = new StringBuilder();
+
+                        for(char c : receiverMessage.toCharArray()){
+                            fullsentence.append(c);
+
+                            if (c == '.' || c == '?' || c == '!') {
+                                setFinalText(fullsentence.toString());
+                                fullsentence = new StringBuilder();
+                            }
+                        }
+
+                        // setFinalText(fullsentence.toString());
+                        Message readMsg = handler.obtainMessage(MESSAGE_READ, bytes, -1, receiverMessage);
+                        readMsg.sendToTarget();
+                        Log.d("FinalMessage", String.valueOf(readMsg));
                     } catch (IOException e) {
-                        Log.e("InputStream Connection","InputStream Connection fail",e);
+                        Log.e("InputStream Connection", "InputStream Connection fail", e);
                         break;
                     }
                 }
             }
         }).start();
+    }
+
+    public void getFinalText() {
+        resultTextView.setText(FinalText);
+    }
+
+    public void setFinalText(String finalText) {
+        FinalText = finalText;
+        Log.d("SetFinalText",finalText);
+    }
+
+     /* private void MqttFunction(String messageData){
+
+          // MQTT Identified Data
+          //tcp://test.mosquitto.org
+          String BrokerURI = "tcp://test.mosquitto.org";
+          int Port = 1883;
+          String Topic = "ambulance/cabin";
+          String ClientID = "mqttv311";
+          String message = "TestData";
+
+
+          try{
+              // MQTT Code
+              Mqtt3AsyncClient client = MqttClient.builder()
+                      .useMqttVersion3()
+                      .identifier(ClientID)
+                      .serverHost(BrokerURI)
+                      .serverPort(Port)
+                      .buildAsync();
+
+              // Connect to MQTT
+              client.connect();
+              client.publishWith()
+                      .topic(Topic)
+                      .payload(message.getBytes())
+                      .qos(MqttQos.AT_LEAST_ONCE)
+                      .send()
+                      .whenComplete((publish,throwable) -> {
+                          if(throwable != null){
+                              // Handle Failure to Publish
+                              Log.e("OnPublisError","Publish Error");
+                          } else {
+                              // handle succesffull publish
+                              Log.d("OnPublishComplete","Publish Complter");
+                          }
+                      });
+              // client.disconnect();
+          } catch (Exception e) {
+              Log.d("Mqtt Exception","Mqtt Exception at :",e);
+          }
+      }*/
+
+    // function for test
+    private void publishMessage(String topic, String message){
+        Toast.makeText(this, "Publishing message: " + message, Toast.LENGTH_SHORT).show();
+        mqttHandler.publish(topic,message);
     }
 
 
@@ -274,5 +374,6 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 Log.e("Bluetooth Destroy","Fail close a socket",e);
             }
         }
+        mqttHandler.disconnected();
     }
 }
