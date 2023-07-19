@@ -27,10 +27,8 @@ import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bsoftware.iotcommunicationtest.BluetoothConnection.ConnectionThread;
-import com.hivemq.client.mqtt.MqttClient;
-import com.hivemq.client.mqtt.datatypes.MqttQos;
-import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient;
+
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -92,41 +90,31 @@ public class BluetoothSerialTest extends AppCompatActivity {
     private String deviceName;
     private String deviceHardwareAddress;
     private StringBuilder dataBuffer = new StringBuilder();
-
     private BluetoothSocket bluetoothSocket;
     private OutputStream outputStream;
     private InputStream inputStream;
-
     private final String SPP_UUID = "00001101-0000-1000-8000-00805F9B34FB";
-
-
     private static final int MESSAGE_READ = 0;
-
-    private String FinalText;
 
     private static final String BrokerURI = "tcp://test.mosquitto.org:1883";
     private static final String ClientID = "mqttv311";
     private static final String Topic = "ambulance/cabin";
     private MqttHandler mqttHandler;
+    private JSONFormatter jsonFormatter = new JSONFormatter();
+
+    GetLocationManager getLocationManager;
 
     private final Handler handler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(@NonNull Message message) {
             if (message.what == MESSAGE_READ) {
                 String receiverMessage = message.obj.toString();
-                String FinalText = String.valueOf(dataBuffer.append(receiverMessage));
-                resultTextView.setText(dataBuffer.append(receiverMessage));
-                publishMessage(Topic,FinalText);
-                // MqttFunction(String.valueOf(dataBuffer.append(receiverMessage)));
-                /*boolean isLive = true;
+                String Finaldata = String.valueOf(dataBuffer.append(receiverMessage));
 
-                if(!resultTextView.toString().isEmpty() && isLive == true){
-                    dataBuffer.setLength(0);
-                    String resultdata = dataBuffer.toString();
-                    // update data
-                    resultTextView.setText(resultdata);
-                }*/
-
+                // 5 means we publish a data if a data fully
+                if(Finaldata.length() == 5){
+                    // publishMessage(Topic, Finaldata);
+                }
             }
             return true;
         }
@@ -137,18 +125,20 @@ public class BluetoothSerialTest extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth_serial_test);
+        // getLocationManager in here because can't call a context in up before
+        getLocationManager = new GetLocationManager(this,BluetoothSerialTest.this);
 
         resultTextView = findViewById(R.id.testTextView);
 
         // permission
         permissionList.addAll(Arrays.asList(permission));
         tellPermission(permissionList);
-        initBluetooth();
-        getFinalText();
+        // initBluetooth();
 
         // Mqtt Test
         mqttHandler = new MqttHandler();
         mqttHandler.connect(BrokerURI,ClientID);
+        publishMessage(Topic,jsonFormatter.Writedata(3.15f,3.13f,getLocationManager.getLongitudeData(),getLocationManager.getLatitudeData()));
 
 
     }
@@ -215,8 +205,6 @@ public class BluetoothSerialTest extends AppCompatActivity {
     }
 
     private void scanBluetoothAddress() {
-        Intent dataName = new Intent();
-        Intent dataAddress = new Intent();
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
             return;
@@ -282,18 +270,6 @@ public class BluetoothSerialTest extends AppCompatActivity {
                         bytes = inputStream.read(buffer);
                         String receiverMessage = new String(buffer, 0,bytes);
                         Log.d("Message", receiverMessage);
-                        StringBuilder fullsentence = new StringBuilder();
-
-                        for(char c : receiverMessage.toCharArray()){
-                            fullsentence.append(c);
-
-                            if (c == '.' || c == '?' || c == '!') {
-                                setFinalText(fullsentence.toString());
-                                fullsentence = new StringBuilder();
-                            }
-                        }
-
-                        // setFinalText(fullsentence.toString());
                         Message readMsg = handler.obtainMessage(MESSAGE_READ, bytes, -1, receiverMessage);
                         readMsg.sendToTarget();
                         Log.d("FinalMessage", String.valueOf(readMsg));
@@ -306,61 +282,12 @@ public class BluetoothSerialTest extends AppCompatActivity {
         }).start();
     }
 
-    public void getFinalText() {
-        resultTextView.setText(FinalText);
-    }
-
-    public void setFinalText(String finalText) {
-        FinalText = finalText;
-        Log.d("SetFinalText",finalText);
-    }
-
-     /* private void MqttFunction(String messageData){
-
-          // MQTT Identified Data
-          //tcp://test.mosquitto.org
-          String BrokerURI = "tcp://test.mosquitto.org";
-          int Port = 1883;
-          String Topic = "ambulance/cabin";
-          String ClientID = "mqttv311";
-          String message = "TestData";
-
-
-          try{
-              // MQTT Code
-              Mqtt3AsyncClient client = MqttClient.builder()
-                      .useMqttVersion3()
-                      .identifier(ClientID)
-                      .serverHost(BrokerURI)
-                      .serverPort(Port)
-                      .buildAsync();
-
-              // Connect to MQTT
-              client.connect();
-              client.publishWith()
-                      .topic(Topic)
-                      .payload(message.getBytes())
-                      .qos(MqttQos.AT_LEAST_ONCE)
-                      .send()
-                      .whenComplete((publish,throwable) -> {
-                          if(throwable != null){
-                              // Handle Failure to Publish
-                              Log.e("OnPublisError","Publish Error");
-                          } else {
-                              // handle succesffull publish
-                              Log.d("OnPublishComplete","Publish Complter");
-                          }
-                      });
-              // client.disconnect();
-          } catch (Exception e) {
-              Log.d("Mqtt Exception","Mqtt Exception at :",e);
-          }
-      }*/
-
     // function for test
-    private void publishMessage(String topic, String message){
-        Toast.makeText(this, "Publishing message: " + message, Toast.LENGTH_SHORT).show();
-        mqttHandler.publish(topic,message);
+    private void publishMessage(String topic, String JSONmessage){
+        // we send a json data format
+        MqttMessage messageJSON = new MqttMessage(JSONmessage.getBytes());
+        Toast.makeText(this, "Publishing message: " + messageJSON, Toast.LENGTH_SHORT).show();
+        mqttHandler.publish(topic, String.valueOf(messageJSON));
     }
 
 
@@ -375,5 +302,6 @@ public class BluetoothSerialTest extends AppCompatActivity {
             }
         }
         mqttHandler.disconnected();
+        getLocationManager.stopLocationUpdate();
     }
 }
