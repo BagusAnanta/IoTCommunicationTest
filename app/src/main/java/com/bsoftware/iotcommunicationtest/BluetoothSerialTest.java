@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @RequiresApi(api = Build.VERSION_CODES.S)
 public class BluetoothSerialTest extends AppCompatActivity {
@@ -110,11 +111,12 @@ public class BluetoothSerialTest extends AppCompatActivity {
             if (message.what == MESSAGE_READ) {
                 String receiverMessage = message.obj.toString();
                 String Finaldata = String.valueOf(dataBuffer.append(receiverMessage));
+                resultTextView.setText(receiverMessage);
 
                 // 5 means we publish a data if a data fully
-                if(Finaldata.length() == 5){
+              /*  if(Finaldata.length() == 5){
                     // publishMessage(Topic, Finaldata);
-                }
+                }*/
             }
             return true;
         }
@@ -133,7 +135,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
         // permission
         permissionList.addAll(Arrays.asList(permission));
         tellPermission(permissionList);
-        // initBluetooth();
+        initBluetooth();
 
         // Mqtt Test
         mqttHandler = new MqttHandler();
@@ -264,19 +266,27 @@ public class BluetoothSerialTest extends AppCompatActivity {
             public void run() {
                 byte[] buffer = new byte[1024];
                 int bytes;
+                ArrayList<String> element = new ArrayList<>();
+                String receiverMessage;
 
                 while(true) {
                     try {
                         bytes = inputStream.read(buffer);
-                        String receiverMessage = new String(buffer, 0,bytes);
+                        // String finaldata = String.valueOf(dataBuffer.append(bytes));
+                        receiverMessage = new String(buffer, 0,bytes);
+                        element.add(receiverMessage);
                         Log.d("Message", receiverMessage);
-                        Message readMsg = handler.obtainMessage(MESSAGE_READ, bytes, -1, receiverMessage);
+                       /* Message readMsg = handler.obtainMessage(MESSAGE_READ, bytes, -1, receiverMessage);
                         readMsg.sendToTarget();
-                        Log.d("FinalMessage", String.valueOf(readMsg));
+                        Log.d("FinalMessage", String.valueOf(readMsg));*/
                     } catch (IOException e) {
                         Log.e("InputStream Connection", "InputStream Connection fail", e);
                         break;
                     }
+                    Log.d("Arraylist result", element.toString());
+                    Message readMsg = handler.obtainMessage(MESSAGE_READ, bytes, -1, element.toString());
+                    readMsg.sendToTarget();
+                    Log.d("FinalMessage", String.valueOf(readMsg));
                 }
             }
         }).start();
