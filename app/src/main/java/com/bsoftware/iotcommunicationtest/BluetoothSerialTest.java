@@ -30,9 +30,11 @@ import android.widget.Toast;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -110,13 +112,16 @@ public class BluetoothSerialTest extends AppCompatActivity {
         public boolean handleMessage(@NonNull Message message) {
             if (message.what == MESSAGE_READ) {
                 String receiverMessage = message.obj.toString();
+                // resultTextView.setText(receiverMessage);
+                // Append a character
                 String Finaldata = String.valueOf(dataBuffer.append(receiverMessage));
-                resultTextView.setText(receiverMessage);
+                // After Append we save a data into array list
+                ArrayList<String> resultData = new ArrayList<>();
+                // Log.d("Arraylist data :", String.valueOf(resultData.add(Finaldata)));
+                //publishMessage(Topic,receiverMessage);
+                jsonFormatter.ParsingData(receiverMessage);
+                publishMessage(Topic,jsonFormatter.Writedata(jsonFormatter.getHeartrate(),jsonFormatter.getSpo2(),getLocationManager.getLongitudeData(),getLocationManager.getLatitudeData()));
 
-                // 5 means we publish a data if a data fully
-              /*  if(Finaldata.length() == 5){
-                    // publishMessage(Topic, Finaldata);
-                }*/
             }
             return true;
         }
@@ -140,7 +145,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
         // Mqtt Test
         mqttHandler = new MqttHandler();
         mqttHandler.connect(BrokerURI,ClientID);
-        publishMessage(Topic,jsonFormatter.Writedata(3.15f,3.13f,getLocationManager.getLongitudeData(),getLocationManager.getLatitudeData()));
+        // publishMessage(Topic,jsonFormatter.Writedata(3.15f,3.13f,getLocationManager.getLongitudeData(),getLocationManager.getLatitudeData()));
 
 
     }
@@ -229,9 +234,6 @@ public class BluetoothSerialTest extends AppCompatActivity {
 
     private void connectFromAddressandName() {
 
-        Log.d("DataIntent Name", deviceName);
-        Log.d("DataIntent Address", deviceHardwareAddress);
-
         // we connect a device use Address
         BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceHardwareAddress);
 
@@ -266,33 +268,52 @@ public class BluetoothSerialTest extends AppCompatActivity {
             public void run() {
                 byte[] buffer = new byte[1024];
                 int bytes;
-                ArrayList<String> element = new ArrayList<>();
                 String receiverMessage;
+                ArrayList<String> getStringCharacter = new ArrayList<>();
+
+                /*Please help me, i'm stuck how get a string sentence bro not character
+                * but i have like thinking about this like
+                * 1. Make like array list and write in there
+                * 2. Make a append (but if a we send a data again a new character append into character before)
+                * */
 
                 while(true) {
                     try {
                         bytes = inputStream.read(buffer);
-                        // String finaldata = String.valueOf(dataBuffer.append(bytes));
                         receiverMessage = new String(buffer, 0,bytes);
-                        element.add(receiverMessage);
                         Log.d("Message", receiverMessage);
-                       /* Message readMsg = handler.obtainMessage(MESSAGE_READ, bytes, -1, receiverMessage);
+                        Message readMsg = handler.obtainMessage(MESSAGE_READ, bytes, -1, receiverMessage);
                         readMsg.sendToTarget();
-                        Log.d("FinalMessage", String.valueOf(readMsg));*/
+                        Log.d("FinalMessage", String.valueOf(readMsg));
                     } catch (IOException e) {
                         Log.e("InputStream Connection", "InputStream Connection fail", e);
                         break;
                     }
-                    Log.d("Arraylist result", element.toString());
-                    Message readMsg = handler.obtainMessage(MESSAGE_READ, bytes, -1, element.toString());
+                   /* Message readMsg = handler.obtainMessage(MESSAGE_READ, -1, -1, getStringCharacter);
                     readMsg.sendToTarget();
-                    Log.d("FinalMessage", String.valueOf(readMsg));
+                    Log.d("FinalMessage", String.valueOf(readMsg));*/
                 }
             }
         }).start();
     }
 
-    // function for test
+    // We gonna check and learn how get or convert a char string into a one sentece and we must check out
+    private String convertInStoStr(InputStream inputdatastream) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        int readData;
+        byte[] data = new byte[1024];
+
+        while((readData = inputdatastream.read(data,0,data.length)) != -1){
+            buffer.write(data,0,readData);
+        }
+
+        buffer.flush();
+        byte[] byteArray = buffer.toByteArray();
+
+        return new String(byteArray, StandardCharsets.UTF_8);
+    }
+
+
     private void publishMessage(String topic, String JSONmessage){
         // we send a json data format
         MqttMessage messageJSON = new MqttMessage(JSONmessage.getBytes());
