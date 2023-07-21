@@ -104,8 +104,30 @@ public class BluetoothSerialTest extends AppCompatActivity {
     private static final String Topic = "ambulance/cabin";
     private MqttHandler mqttHandler;
     private JSONFormatter jsonFormatter = new JSONFormatter();
-
     GetLocationManager getLocationManager;
+    private double longitude;
+    private double latitude;
+
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_bluetooth_serial_test);
+
+        resultTextView = findViewById(R.id.testTextView);
+
+        // permission
+        permissionList.addAll(Arrays.asList(permission));
+        tellPermission(permissionList);
+        initBluetooth();
+
+        // Mqtt Test
+        mqttHandler = new MqttHandler();
+        mqttHandler.connect(BrokerURI,ClientID);
+        // publishMessage(Topic,jsonFormatter.Writedata(3.15f,3.13f,getLocationManager.getLongitudeData(),getLocationManager.getLatitudeData()));
+
+    }
 
     private final Handler handler = new Handler(new Handler.Callback() {
         @Override
@@ -120,35 +142,13 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 // Log.d("Arraylist data :", String.valueOf(resultData.add(Finaldata)));
                 //publishMessage(Topic,receiverMessage);
                 jsonFormatter.ParsingData(receiverMessage);
-                publishMessage(Topic,jsonFormatter.Writedata(jsonFormatter.getHeartrate(),jsonFormatter.getSpo2(),getLocationManager.getLongitudeData(),getLocationManager.getLatitudeData()));
+                publishMessage(Topic,jsonFormatter.Writedata(jsonFormatter.getHeartrate(),jsonFormatter.getSpo2(),getlongitude(),getlatitude()));
+
 
             }
             return true;
         }
     });
-
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_bluetooth_serial_test);
-        // getLocationManager in here because can't call a context in up before
-        getLocationManager = new GetLocationManager(this,BluetoothSerialTest.this);
-
-        resultTextView = findViewById(R.id.testTextView);
-
-        // permission
-        permissionList.addAll(Arrays.asList(permission));
-        tellPermission(permissionList);
-        initBluetooth();
-
-        // Mqtt Test
-        mqttHandler = new MqttHandler();
-        mqttHandler.connect(BrokerURI,ClientID);
-        // publishMessage(Topic,jsonFormatter.Writedata(3.15f,3.13f,getLocationManager.getLongitudeData(),getLocationManager.getLatitudeData()));
-
-
-    }
 
     private void tellPermission(@NonNull ArrayList<String> permissionList) {
         try {
@@ -319,6 +319,16 @@ public class BluetoothSerialTest extends AppCompatActivity {
         MqttMessage messageJSON = new MqttMessage(JSONmessage.getBytes());
         Toast.makeText(this, "Publishing message: " + messageJSON, Toast.LENGTH_SHORT).show();
         mqttHandler.publish(topic, String.valueOf(messageJSON));
+    }
+
+    private double getlongitude(){
+        GetLocationManager getLocationManager = new GetLocationManager(this,BluetoothSerialTest.this);
+        return getLocationManager.getLongitudeData();
+    }
+
+    private double getlatitude(){
+        GetLocationManager getLocationManager = new GetLocationManager(this,BluetoothSerialTest.this);
+        return getLocationManager.getLatitudeData();
     }
 
 
