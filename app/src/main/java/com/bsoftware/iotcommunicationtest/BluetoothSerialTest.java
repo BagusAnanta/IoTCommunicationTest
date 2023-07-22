@@ -121,7 +121,8 @@ public class BluetoothSerialTest extends AppCompatActivity {
 
     private static final String BrokerURI = "tcp://test.mosquitto.org:1883";
     private static final String ClientID = "mqttv311";
-    private static final String Topic = "ambulance/cabin";
+    private static final String Topic_status = "BG1003AM/status";
+    private static final String Topic_patient = "BG1003AM/patient";
     private MqttHandler mqttHandler;
     private JSONFormatter jsonFormatter = new JSONFormatter();
     private FusedLocationProviderClient fusedLocationProviderClient;
@@ -154,7 +155,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
 
         // Mqtt Test
         mqttHandler = new MqttHandler();
-        mqttHandler.connect(BrokerURI,ClientID);
+        mqttHandler.connect(BrokerURI,ClientID,Topic_status);
 
         //GPS
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
@@ -176,7 +177,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 // After Append we save a data into array list
                 ArrayList<String> resultData = new ArrayList<>();
                 jsonFormatter.ParsingData(receiverMessage);
-                publishMessage(Topic,jsonFormatter.Writedata(jsonFormatter.getHeartrate(),jsonFormatter.getSpo2(),getLongitudeStr(),getLatitudeStr()));
+                publishMessage(Topic_patient,jsonFormatter.Writedata(jsonFormatter.getHeartrate(),jsonFormatter.getSpo2(),getLongitudeStr(),getLatitudeStr()));
 
             }
             return true;
@@ -329,12 +330,17 @@ public class BluetoothSerialTest extends AppCompatActivity {
         }).start();
     }
 
+
+    /*---------------------------------------------------------------------------------------------------------
+    * -------------------------------------------MQTT PUBLISHER FUNCTION---------------------------------------*/
     private void publishMessage(String topic, String JSONmessage){
         // we send a json data format
         MqttMessage messageJSON = new MqttMessage(JSONmessage.getBytes());
         Toast.makeText(this, "Publishing message: " + messageJSON, Toast.LENGTH_SHORT).show();
         mqttHandler.publish(topic, String.valueOf(messageJSON));
     }
+    /*---------------------------------------------------------------------------------------------------------
+     * -------------------------------------------MQTT PUBLISHER FUNCTION---------------------------------------*/
 
     /*------------------------------------------------------------------------------------------------------
     * ----------------------------- GPS AREA ---------------------------------------------------------------*/
@@ -390,9 +396,20 @@ public class BluetoothSerialTest extends AppCompatActivity {
         latitude = lastlocation.getLatitude();
         longitude = lastlocation.getLongitude();
 
+        // if a setLatitudeStr() get a null value
+        if(s_lat.equals(null) && s_log.equals(null)){
+            // we set a data 0, because we not need a null in a longitude and latitude
+            setLatitudeStr("0");
+            setLongitudeStr("0");
+        } else if(s_lat != null && s_log != null){
+            // we get a real data
+            setLatitudeStr(s_lat);// -> must s_lat
+            setLongitudeStr(s_log);// -> must s_log
+        }
+
         // we can set a data in here
-        setLatitudeStr(s_lat);// -> must s_lat
-        setLongitudeStr(s_log);// -> must s_log
+       /* setLatitudeStr(s_lat);// -> must s_lat
+        setLongitudeStr(s_log);// -> must s_log*/
 
         try{
             Geocoder geocoder = new Geocoder(this,Locale.getDefault());
