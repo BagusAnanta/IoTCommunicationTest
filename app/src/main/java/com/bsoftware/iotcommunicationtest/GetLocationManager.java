@@ -46,6 +46,9 @@ public class GetLocationManager {
     private double longitude;
     private double latitude;
 
+    private String longitudeStr;
+    private String latitudeStr;
+
     String fetched_address = "";
 
     public GetLocationManager(Context context, Activity activity) {
@@ -106,15 +109,15 @@ public class GetLocationManager {
         Log.d("Location","longitude"+ lastlocation.getLongitude());
         Log.d("Location","altitude"+ lastlocation.getAltitude());
 
-        Double s_lat = Double.valueOf(String.format(Locale.ROOT,"%.6f",lastlocation.getLatitude()));
-        Double s_log = Double.valueOf(String.format(Locale.ROOT,"%.6f",lastlocation.getLongitude()));
+        String s_lat = String.format(Locale.ROOT,"%.6f",lastlocation.getLatitude());
+        String s_log = String.format(Locale.ROOT,"%.6f",lastlocation.getLongitude());
 
         latitude = lastlocation.getLatitude();
         longitude = lastlocation.getLongitude();
 
         // we can set a data in here
-        setLatitudeData(s_lat); // -> must s_lat
-        setLongitudeData(s_log); // -> must s_log
+        setLatitudeStr(s_lat);// -> must s_lat
+        setLongitudeStr(s_log);// -> must s_log
 
         try{
             Geocoder geocoder = new Geocoder(context,Locale.getDefault());
@@ -195,19 +198,20 @@ public class GetLocationManager {
 
 
 
-    public double getLongitudeData() {
-        return longitude;
+
+    public String getLongitudeStr() {
+        return longitudeStr;
     }
 
-    public void setLongitudeData(double longitude) {
-        this.longitude = longitude;
+    public void setLongitudeStr(String longitudeStr) {
+        this.longitudeStr = longitudeStr;
     }
 
-    public double getLatitudeData() {
-        return latitude;
+    public String getLatitudeStr() {
+        return latitudeStr;
     }
 
-    public void setLatitudeData(double latitude) {
-        this.latitude = latitude;
+    public void setLatitudeStr(String latitudeStr) {
+        this.latitudeStr = latitudeStr;
     }
 }

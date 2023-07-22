@@ -12,6 +12,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -19,14 +20,31 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
+import android.provider.Settings;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.Granularity;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.Priority;
+import com.google.android.gms.location.SettingsClient;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
@@ -38,6 +56,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -104,11 +124,21 @@ public class BluetoothSerialTest extends AppCompatActivity {
     private static final String Topic = "ambulance/cabin";
     private MqttHandler mqttHandler;
     private JSONFormatter jsonFormatter = new JSONFormatter();
-    GetLocationManager getLocationManager;
+    private FusedLocationProviderClient fusedLocationProviderClient;
+    private LocationRequest locationRequest;
+    private LocationCallback locationCallback;
+    private LocationSettingsRequest locationSettingsRequest;
+    private Location lastlocation;
+    private SettingsClient settingsClient;
+    private int REQUEST_PERMISSION = 1;
+    private Activity activity;
     private double longitude;
     private double latitude;
 
+    private String longitudeStr;
+    private String latitudeStr;
 
+    String fetched_address = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,7 +155,13 @@ public class BluetoothSerialTest extends AppCompatActivity {
         // Mqtt Test
         mqttHandler = new MqttHandler();
         mqttHandler.connect(BrokerURI,ClientID);
-        // publishMessage(Topic,jsonFormatter.Writedata(3.15f,3.13f,getLocationManager.getLongitudeData(),getLocationManager.getLatitudeData()));
+
+        //GPS
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        // check permission and turn on GPS if disable
+        checkLocationPermission();
+        // we init in here lah
+        init();
 
     }
 
@@ -136,14 +172,11 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 String receiverMessage = message.obj.toString();
                 // resultTextView.setText(receiverMessage);
                 // Append a character
-                String Finaldata = String.valueOf(dataBuffer.append(receiverMessage));
+                // String Finaldata = String.valueOf(dataBuffer.append(receiverMessage));
                 // After Append we save a data into array list
                 ArrayList<String> resultData = new ArrayList<>();
-                // Log.d("Arraylist data :", String.valueOf(resultData.add(Finaldata)));
-                //publishMessage(Topic,receiverMessage);
                 jsonFormatter.ParsingData(receiverMessage);
-                publishMessage(Topic,jsonFormatter.Writedata(jsonFormatter.getHeartrate(),jsonFormatter.getSpo2(),getlongitude(),getlatitude()));
-
+                publishMessage(Topic,jsonFormatter.Writedata(jsonFormatter.getHeartrate(),jsonFormatter.getSpo2(),getLongitudeStr(),getLatitudeStr()));
 
             }
             return true;
@@ -161,7 +194,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 }
             }
         } catch (NullPointerException E) {
-
+            Log.e("PermissionErrorException","NullPointerException At :",E);
         }
     }
 
@@ -269,7 +302,6 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 byte[] buffer = new byte[1024];
                 int bytes;
                 String receiverMessage;
-                ArrayList<String> getStringCharacter = new ArrayList<>();
 
                 /*Please help me, i'm stuck how get a string sentence bro not character
                 * but i have like thinking about this like
@@ -297,23 +329,6 @@ public class BluetoothSerialTest extends AppCompatActivity {
         }).start();
     }
 
-    // We gonna check and learn how get or convert a char string into a one sentece and we must check out
-    private String convertInStoStr(InputStream inputdatastream) throws IOException {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        int readData;
-        byte[] data = new byte[1024];
-
-        while((readData = inputdatastream.read(data,0,data.length)) != -1){
-            buffer.write(data,0,readData);
-        }
-
-        buffer.flush();
-        byte[] byteArray = buffer.toByteArray();
-
-        return new String(byteArray, StandardCharsets.UTF_8);
-    }
-
-
     private void publishMessage(String topic, String JSONmessage){
         // we send a json data format
         MqttMessage messageJSON = new MqttMessage(JSONmessage.getBytes());
@@ -321,15 +336,155 @@ public class BluetoothSerialTest extends AppCompatActivity {
         mqttHandler.publish(topic, String.valueOf(messageJSON));
     }
 
-    private double getlongitude(){
-        GetLocationManager getLocationManager = new GetLocationManager(this,BluetoothSerialTest.this);
-        return getLocationManager.getLongitudeData();
+    /*------------------------------------------------------------------------------------------------------
+    * ----------------------------- GPS AREA ---------------------------------------------------------------*/
+
+    public void checkLocationPermission() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_FINE_LOCATION)) {
+                ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_PERMISSION);
+            } else {
+                ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_PERMISSION);
+            }
+        } else {
+            // we can turn on a GPS in here
+            turnOnGPS();
+        }
     }
 
-    private double getlatitude(){
-        GetLocationManager getLocationManager = new GetLocationManager(this,BluetoothSerialTest.this);
-        return getLocationManager.getLatitudeData();
+    private void startLocationUpdate() {
+        settingsClient.checkLocationSettings(locationSettingsRequest)
+                .addOnSuccessListener(locationSettingsResponse -> {
+                    Log.d("startlocationupdate", "Location settings ok");
+                    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        return;
+                    }
+                    fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper());
+                })
+                .addOnFailureListener(e ->{
+                    int statusCode = ((ApiException) e).getStatusCode();
+                    Log.d("startlocationupdate","Contain error" + statusCode);
+                });
     }
+
+    public void stopLocationUpdate(){
+        try{
+            fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+                    .addOnCompleteListener(task -> {Log.d("LocationUpdate","Stop location update");});
+        } catch (NullPointerException e){
+            Log.d("StopLocationUpdate","Error at :", e);
+        }
+    }
+
+    private void receiveLocation(LocationResult locationResult){
+        lastlocation = locationResult.getLastLocation();
+
+        // test for now
+        Log.d("Location" ,"latitude"+ lastlocation.getLatitude());
+        Log.d("Location","longitude"+ lastlocation.getLongitude());
+        Log.d("Location","altitude"+ lastlocation.getAltitude());
+
+        String s_lat = String.format(Locale.ROOT,"%.6f",lastlocation.getLatitude());
+        String s_log = String.format(Locale.ROOT,"%.6f",lastlocation.getLongitude());
+
+        latitude = lastlocation.getLatitude();
+        longitude = lastlocation.getLongitude();
+
+        // we can set a data in here
+        setLatitudeStr(s_lat);// -> must s_lat
+        setLongitudeStr(s_log);// -> must s_log
+
+        try{
+            Geocoder geocoder = new Geocoder(this,Locale.getDefault());
+            List<Address> addresses = geocoder.getFromLocation(latitude,longitude,1);
+
+            fetched_address = addresses.get(0).getAddressLine(0);
+            Log.d("Location","LocationdataAddress"+fetched_address);
+
+
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private void turnOnGPS() {
+        // check a gps enable
+        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+
+        if (locationManager != null && locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            // if a GPS Active enable we get a log and lat data
+            // we request a location
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
+        } else {
+            // if GPS disable
+            requestEnableGPS();
+
+        }
+    }
+
+    public void init(){
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        settingsClient = LocationServices.getSettingsClient(this);
+        locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(@NonNull LocationResult locationResult) {
+                super.onLocationResult(locationResult);
+                receiveLocation(locationResult);
+            }
+        };
+
+       /* locationRequest = LocationRequest.create()
+                .setInterval(5000)
+                .setFastestInterval(500)
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setMaxWaitTime(100);*/
+
+        locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY,5000)
+                .setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
+                .setMinUpdateIntervalMillis(500)
+                .setMinUpdateDistanceMeters(1)
+                .setWaitForAccurateLocation(true)
+                .build();
+
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
+        builder.addLocationRequest(locationRequest);
+        locationSettingsRequest = builder.build();
+        startLocationUpdate();
+    }
+
+    private void requestEnableGPS(){
+        // we make alert in here
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Turn On A GPS Needed")
+                .setMessage("Need Turn on a GPS for Application Function, click Turn On")
+                .setPositiveButton("Turn On", (dialog, which) -> {
+                    Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    this.startActivity(intent);
+                });
+        builder.create();
+        builder.show();
+    }
+
+    public String getLongitudeStr() {
+        return longitudeStr;
+    }
+
+    public void setLongitudeStr(String longitudeStr) {
+        this.longitudeStr = longitudeStr;
+    }
+
+    public String getLatitudeStr() {
+        return latitudeStr;
+    }
+
+    public void setLatitudeStr(String latitudeStr) {
+        this.latitudeStr = latitudeStr;
+    }
+
+    /*------------------------------------------------------------------------------------------------------
+     * ----------------------------- GPS AREA ---------------------------------------------------------------*/
 
 
     @Override
@@ -343,6 +498,6 @@ public class BluetoothSerialTest extends AppCompatActivity {
             }
         }
         mqttHandler.disconnected();
-        getLocationManager.stopLocationUpdate();
+        stopLocationUpdate();
     }
 }

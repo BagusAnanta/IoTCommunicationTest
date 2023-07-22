@@ -2,22 +2,32 @@ package com.bsoftware.iotcommunicationtest;
 
 import android.util.Log;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class JSONFormatter {
 
     private float heartrate;
     private float spo2;
 
-    public String Writedata(Float heartRate, Float spo2, Double Longitude, Double Latitude){
+    public String Writedata(Float heartRate, Float spo2, String Longitude, String Latitude){
         JSONObject object = new JSONObject();
-        String finaldata = "Hello";
+
+        /*We make a like list for fill a longitude and latitude data*/
+        List<String> locationList = new ArrayList<>();
+        locationList.add(Longitude);
+        locationList.add(Latitude);
+        JSONArray locationjson = new JSONArray(locationList);
+
+        String finaldata = "";
         try{
             object.put("HeartRate",heartRate);
             object.put("SPO2",spo2);
-            object.put("Longitude",Longitude);
-            object.put("Latitude",Latitude);
+            object.put("GPS",locationjson);
 
             finaldata = object.toString();
         } catch (JSONException e) {
