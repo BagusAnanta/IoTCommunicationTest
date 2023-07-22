@@ -343,7 +343,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
      * -------------------------------------------MQTT PUBLISHER FUNCTION---------------------------------------*/
 
     /*------------------------------------------------------------------------------------------------------
-    * ----------------------------- GPS AREA ---------------------------------------------------------------*/
+    * ------------------------------------------------- GPS AREA ---------------------------------------------------------------*/
 
     public void checkLocationPermission() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -397,10 +397,11 @@ public class BluetoothSerialTest extends AppCompatActivity {
         longitude = lastlocation.getLongitude();
 
         // if a setLatitudeStr() get a null value
-        if(s_lat.equals(null) && s_log.equals(null)){
+        // pens default location = -7.275840108614498, 112.79375167129476
+        if(s_lat == null && s_log == null){
             // we set a data 0, because we not need a null in a longitude and latitude
-            setLatitudeStr("0");
-            setLongitudeStr("0");
+            setLatitudeStr("7.2758401");
+            setLongitudeStr("112.793751");
         } else if(s_lat != null && s_log != null){
             // we get a real data
             setLatitudeStr(s_lat);// -> must s_lat

@@ -25,7 +25,7 @@ public class JSONFormatter {
 
         String finaldata = "";
         try{
-            object.put("HeartRate",heartRate);
+            object.put("HR",heartRate);
             object.put("SPO2",spo2);
             object.put("GPS",locationjson);
 
