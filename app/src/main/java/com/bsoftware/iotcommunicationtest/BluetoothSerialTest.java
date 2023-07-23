@@ -31,6 +31,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.provider.Settings;
 import android.util.Log;
+import android.webkit.WebView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -146,7 +147,11 @@ public class BluetoothSerialTest extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth_serial_test);
 
-        resultTextView = findViewById(R.id.testTextView);
+        // set up webview
+        WebView webviewInterface = (WebView) findViewById(R.id.webviewint);
+        // for test, if a web done, dont forget change this
+        webviewInterface.loadUrl("https://teamrrq.com/");
+
 
         // permission
         permissionList.addAll(Arrays.asList(permission));
@@ -177,6 +182,13 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 // After Append we save a data into array list
                 ArrayList<String> resultData = new ArrayList<>();
                 jsonFormatter.ParsingData(receiverMessage);
+                if(getLatitudeStr().equals(null) && getLongitudeStr().equals(null)){
+                    // if a data latitude and longitude is null we set a pens format
+                    // pens default location = -7.275840108614498, 112.79375167129476
+                    setLatitudeStr("-7.2758401");
+                    setLongitudeStr("112.793751");
+                }
+                // and set data in here
                 publishMessage(Topic_patient,jsonFormatter.Writedata(jsonFormatter.getHeartrate(),jsonFormatter.getSpo2(),getLongitudeStr(),getLatitudeStr()));
 
             }
@@ -261,6 +273,10 @@ public class BluetoothSerialTest extends AppCompatActivity {
 
                 if (deviceName.equals("AMBULANCE POLSRI") && deviceHardwareAddress.equals("3C:61:05:3F:61:16")) {
                     connectFromAddressandName();
+                } else {
+                    // if a device not found we rescan a bluetooth
+                    scanBluetoothAddress();
+                    Toast.makeText(activity, "Rescan A bluetooth please wait", Toast.LENGTH_SHORT).show();
                 }
             }
         }
@@ -342,7 +358,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
     /*---------------------------------------------------------------------------------------------------------
      * -------------------------------------------MQTT PUBLISHER FUNCTION---------------------------------------*/
 
-    /*------------------------------------------------------------------------------------------------------
+    /*--------------------------------------------------------------------------------------------------------------------------
     * ------------------------------------------------- GPS AREA ---------------------------------------------------------------*/
 
     public void checkLocationPermission() {
@@ -386,6 +402,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
         lastlocation = locationResult.getLastLocation();
 
         // test for now
+        assert lastlocation != null;
         Log.d("Location" ,"latitude"+ lastlocation.getLatitude());
         Log.d("Location","longitude"+ lastlocation.getLongitude());
         Log.d("Location","altitude"+ lastlocation.getAltitude());
@@ -398,19 +415,10 @@ public class BluetoothSerialTest extends AppCompatActivity {
 
         // if a setLatitudeStr() get a null value
         // pens default location = -7.275840108614498, 112.79375167129476
-        if(s_lat == null && s_log == null){
-            // we set a data 0, because we not need a null in a longitude and latitude
-            setLatitudeStr("7.2758401");
-            setLongitudeStr("112.793751");
-        } else if(s_lat != null && s_log != null){
-            // we get a real data
-            setLatitudeStr(s_lat);// -> must s_lat
-            setLongitudeStr(s_log);// -> must s_log
-        }
 
         // we can set a data in here
-       /* setLatitudeStr(s_lat);// -> must s_lat
-        setLongitudeStr(s_log);// -> must s_log*/
+        setLatitudeStr(s_lat);// -> must s_lat
+        setLongitudeStr(s_log);// -> must s_log
 
         try{
             Geocoder geocoder = new Geocoder(this,Locale.getDefault());
@@ -480,6 +488,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 .setPositiveButton("Turn On", (dialog, which) -> {
                     Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                     this.startActivity(intent);
+                    dialog.dismiss();
                 });
         builder.create();
         builder.show();
@@ -502,7 +511,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
     }
 
     /*------------------------------------------------------------------------------------------------------
-     * ----------------------------- GPS AREA ---------------------------------------------------------------*/
+     * ------------------------------------------ GPS AREA ------------------------------------------------*/
 
 
     @Override
