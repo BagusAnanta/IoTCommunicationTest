@@ -306,13 +306,25 @@ public class BluetoothSerialTest extends AppCompatActivity {
                             // reconnecting in 10 second
                             Log.d("BluetoothSocket","Reconnection condition");
                             // reconnecting again
-                            //bluetoothSocket.connect();
                             /*But if you use a recursive fucntion you must handle a stack overflow exception*/
                             try{
                                 connectFromAddressandName();
                                 Thread.sleep(10000);
                             } catch (StackOverflowError stackOverflowError){
                                 // if a stackoverflow found we must reset a app of finish a program in here
+                                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
+                                    Toast.makeText(activity, "Application close restart app", Toast.LENGTH_SHORT).show();
+                                    // for restart a app
+                                    Context context = getApplicationContext();
+                                    PackageManager packageManager = context.getPackageManager();
+                                    Intent intent = packageManager.getLaunchIntentForPackage(context.getPackageName());
+                                    Intent mainIntent = Intent.makeRestartActivityTask(intent.getComponent());
+                                    context.startActivity(mainIntent);
+                                    Runtime.getRuntime().exit(0);
+                                } else {
+                                    // if below android Q we finish a program
+                                    finish();
+                                }
 
                             } catch (InterruptedException ex) {
                                 throw new RuntimeException(ex);
