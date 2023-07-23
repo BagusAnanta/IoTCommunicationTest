@@ -24,6 +24,9 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -108,9 +111,6 @@ public class BluetoothSerialTest extends AppCompatActivity {
     // init bluetoohtAdapter
     BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     private int REQUEST_ENABLE_BT = 1;
-
-    TextView resultTextView;
-
     private String deviceName;
     private String deviceHardwareAddress;
     private StringBuilder dataBuffer = new StringBuilder();
@@ -146,6 +146,9 @@ public class BluetoothSerialTest extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth_serial_test);
+
+        // Check connection
+        checkInternetConnection(this);
 
         // set up webview
         WebView webviewInterface = (WebView) findViewById(R.id.webviewint);
@@ -185,6 +188,9 @@ public class BluetoothSerialTest extends AppCompatActivity {
         }
     });
 
+    /*---------------------------------------------------------------------------------------------------------------------------
+     * ------------------------------------------------PERMISSION FUNCTION------------------------------------------------------*/
+
     private void tellPermission(@NonNull ArrayList<String> permissionList) {
         try {
             String[] permissionStr = new String[permissionList.size()];
@@ -222,6 +228,12 @@ public class BluetoothSerialTest extends AppCompatActivity {
     private boolean hasPermission(Context context, String permissionStr) {
         return ContextCompat.checkSelfPermission(context, permissionStr) == PackageManager.PERMISSION_GRANTED;
     }
+
+    /*---------------------------------------------------------------------------------------------------------------------------
+     * ------------------------------------------------END PERMISSION FUNCTION------------------------------------------------------*/
+
+    /*---------------------------------------------------------------------------------------------------------------------------
+     * ------------------------------------------------BLUETOOH CODE CONNECTION---------------------------------------------------*/
 
     private void initBluetooth() {
         if (bluetoothAdapter == null) {
@@ -348,12 +360,6 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 int bytes;
                 String receiverMessage;
 
-                /*Please help me, i'm stuck how get a string sentence bro not character
-                * but i have like thinking about this like
-                * 1. Make like array list and write in there
-                * 2. Make a append (but if a we send a data again a new character append into character before)
-                * */
-
                 while(true) {
                     try {
                         bytes = inputStream.read(buffer);
@@ -366,13 +372,43 @@ public class BluetoothSerialTest extends AppCompatActivity {
                         Log.e("InputStream Connection", "InputStream Connection fail", e);
                         break;
                     }
-                   /* Message readMsg = handler.obtainMessage(MESSAGE_READ, -1, -1, getStringCharacter);
-                    readMsg.sendToTarget();
-                    Log.d("FinalMessage", String.valueOf(readMsg));*/
                 }
             }
         }).start();
     }
+
+    /*---------------------------------------------------------------------------------------------------------------------------
+     * ------------------------------------------------END BLUETOOH CODE CONNECTION---------------------------------------------------*/
+
+    /*---------------------------------------------------------------------------------------------------------------------------
+    * ------------------------------------------------CHECK NETWORK CONNECTION---------------------------------------------------*/
+
+    private void checkInternetConnection(Context context){
+        ConnectivityManager internetContext = (ConnectivityManager) context.getSystemService(CONNECTIVITY_SERVICE);
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU){
+            NetworkCapabilities networkCapatibility = internetContext.getNetworkCapabilities(internetContext.getActiveNetwork());
+
+            // check condition
+            if(networkCapatibility == null){
+                Toast.makeText(context, "Network Disconnect, please check connection", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(context, "Network Connected", Toast.LENGTH_SHORT).show();
+            }
+
+        } else {
+            // if a android below tiramisu
+            NetworkInfo networkInfo = internetContext.getActiveNetworkInfo();
+            if(networkInfo.isConnectedOrConnecting() && networkInfo.isAvailable()){
+                Toast.makeText(context, "Network Connected", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(context, "Network Disconnect, please check a connection", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    /*---------------------------------------------------------------------------------------------------------------------------
+     * ------------------------------------------------END CHECK NETWORK CONNECTION---------------------------------------------------*/
 
 
     /*---------------------------------------------------------------------------------------------------------
@@ -384,7 +420,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
         mqttHandler.publish(topic, String.valueOf(messageJSON));
     }
     /*---------------------------------------------------------------------------------------------------------
-     * -------------------------------------------MQTT PUBLISHER FUNCTION---------------------------------------*/
+     * -------------------------------------------END MQTT PUBLISHER FUNCTION---------------------------------------*/
 
     /*--------------------------------------------------------------------------------------------------------------------------
     * ------------------------------------------------- GPS AREA ---------------------------------------------------------------*/
@@ -501,12 +537,6 @@ public class BluetoothSerialTest extends AppCompatActivity {
             }
         };
 
-       /* locationRequest = LocationRequest.create()
-                .setInterval(5000)
-                .setFastestInterval(500)
-                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-                .setMaxWaitTime(100);*/
-
         locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY,1000) // -> 5000
                 .setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
                 .setMinUpdateIntervalMillis(500)
@@ -551,7 +581,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
     }
 
     /*------------------------------------------------------------------------------------------------------
-     * ------------------------------------------ GPS AREA ------------------------------------------------*/
+     * ------------------------------------------END GPS AREA ------------------------------------------------*/
 
 
     @Override
