@@ -182,12 +182,12 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 // After Append we save a data into array list
                 ArrayList<String> resultData = new ArrayList<>();
                 jsonFormatter.ParsingData(receiverMessage);
-                if(getLatitudeStr().equals(null) && getLongitudeStr().equals(null)){
+                /*if(getLatitudeStr().equals("null") && getLongitudeStr().equals("null")){
                     // if a data latitude and longitude is null we set a pens format
                     // pens default location = -7.275840108614498, 112.79375167129476
                     setLatitudeStr("-7.2758401");
                     setLongitudeStr("112.793751");
-                }
+                }*/
                 // and set data in here
                 publishMessage(Topic_patient,jsonFormatter.Writedata(jsonFormatter.getHeartrate(),jsonFormatter.getSpo2(),getLongitudeStr(),getLatitudeStr()));
 
@@ -292,7 +292,29 @@ public class BluetoothSerialTest extends AppCompatActivity {
               return;
             }
             bluetoothSocket = device.createRfcommSocketToServiceRecord(UUID.fromString(SPP_UUID));
-            bluetoothSocket.connect();
+            /* I think before connect we gonna check a bluetooth socket connecting if a connection is available we gonna check and scan again*/
+            try{
+                bluetoothSocket.connect();
+            } catch (IOException e){
+                // check this bluetooth connect, if not connect we reconnecting again and give a time
+                while(!bluetoothSocket.isConnected()){
+                    // we try a thead in 10 second and if a not connect we finish
+                    // reconnecting in 10 second
+                    Log.d("BluetoothSocket","Reconnection condition");
+                    // reconnecting again
+                    //bluetoothSocket.connect();
+                    connectFromAddressandName();
+                    Thread.sleep(10000);
+
+                    if(!bluetoothSocket.isConnected()){
+                        Toast.makeText(activity, "Bluetooth Device not connecting app shutdown", Toast.LENGTH_SHORT).show();
+                        bluetoothSocket.close();
+                        finish();
+                        break;
+                    }
+                }
+            }
+
             outputStream = bluetoothSocket.getOutputStream();
             inputStream = bluetoothSocket.getInputStream();
 
@@ -308,6 +330,8 @@ public class BluetoothSerialTest extends AppCompatActivity {
         } catch (IOException e) {
             Log.e("Connection Statue","Fail to connection",e);
             finish();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
 
     }
