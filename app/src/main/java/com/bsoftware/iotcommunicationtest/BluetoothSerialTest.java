@@ -176,18 +176,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
         public boolean handleMessage(@NonNull Message message) {
             if (message.what == MESSAGE_READ) {
                 String receiverMessage = message.obj.toString();
-                // resultTextView.setText(receiverMessage);
-                // Append a character
-                // String Finaldata = String.valueOf(dataBuffer.append(receiverMessage));
-                // After Append we save a data into array list
-                ArrayList<String> resultData = new ArrayList<>();
                 jsonFormatter.ParsingData(receiverMessage);
-                /*if(getLatitudeStr().equals("null") && getLongitudeStr().equals("null")){
-                    // if a data latitude and longitude is null we set a pens format
-                    // pens default location = -7.275840108614498, 112.79375167129476
-                    setLatitudeStr("-7.2758401");
-                    setLongitudeStr("112.793751");
-                }*/
                 // and set data in here
                 publishMessage(Topic_patient,jsonFormatter.Writedata(jsonFormatter.getHeartrate(),jsonFormatter.getSpo2(),getLongitudeStr(),getLatitudeStr()));
 
@@ -297,22 +286,40 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 bluetoothSocket.connect();
             } catch (IOException e){
                 // check this bluetooth connect, if not connect we reconnecting again and give a time
-                while(!bluetoothSocket.isConnected()){
-                    // we try a thead in 10 second and if a not connect we finish
-                    // reconnecting in 10 second
-                    Log.d("BluetoothSocket","Reconnection condition");
-                    // reconnecting again
-                    //bluetoothSocket.connect();
-                    connectFromAddressandName();
-                    Thread.sleep(10000);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        while(!bluetoothSocket.isConnected()){
+                            // we try a thead in 10 second and if a not connect we finish
+                            // reconnecting in 10 second
+                            Log.d("BluetoothSocket","Reconnection condition");
+                            // reconnecting again
+                            //bluetoothSocket.connect();
+                            /*But if you use a recursive fucntion you must handle a stack overflow exception*/
+                            try{
+                                connectFromAddressandName();
+                                Thread.sleep(10000);
+                            } catch (StackOverflowError stackOverflowError){
+                                // if a stackoverflow found we must reset a app of finish a program in here
 
-                    if(!bluetoothSocket.isConnected()){
-                        Toast.makeText(activity, "Bluetooth Device not connecting app shutdown", Toast.LENGTH_SHORT).show();
-                        bluetoothSocket.close();
-                        finish();
-                        break;
+                            } catch (InterruptedException ex) {
+                                throw new RuntimeException(ex);
+                            }
+
+
+                            if(bluetoothSocket.isConnected()){
+                                Toast.makeText(activity, "Bluetooth Device not connecting app shutdown", Toast.LENGTH_SHORT).show();
+                                try {
+                                    bluetoothSocket.close();
+                                } catch (IOException ex) {
+                                    throw new RuntimeException(ex);
+                                }
+                                finish();
+                                break;
+                            }
+                        }
                     }
-                }
+                });
             }
 
             outputStream = bluetoothSocket.getOutputStream();
@@ -330,10 +337,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
         } catch (IOException e) {
             Log.e("Connection Statue","Fail to connection",e);
             finish();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         }
-
     }
 
     private void startReadData(){
@@ -440,11 +444,23 @@ public class BluetoothSerialTest extends AppCompatActivity {
         // if a setLatitudeStr() get a null value
         // pens default location = -7.275840108614498, 112.79375167129476
 
-        // we can set a data in here
+      /*  if(getLatitudeStr().equals("null") && getLongitudeStr().equals("null") || s_lat.equals("null") && s_log.equals("null")){
+            // if a data latitude and longitude is null we set a pens format
+            // pens default location = -7.275840108614498, 112.79375167129476
+            setLatitudeStr("-7.2758401");
+            setLongitudeStr("112.793751");
+        } else {
+            // if a data not null we get from s_lat and s_log
+            // we can set a data in here
+            setLatitudeStr(s_lat);// -> must s_lat
+            setLongitudeStr(s_log);// -> must s_log
+        }*/
+
         setLatitudeStr(s_lat);// -> must s_lat
         setLongitudeStr(s_log);// -> must s_log
 
         try{
+            // for Address (if a need, and dont delete this code)
             Geocoder geocoder = new Geocoder(this,Locale.getDefault());
             List<Address> addresses = geocoder.getFromLocation(latitude,longitude,1);
 
@@ -491,7 +507,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                 .setMaxWaitTime(100);*/
 
-        locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY,5000)
+        locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY,1000) // -> 5000
                 .setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
                 .setMinUpdateIntervalMillis(500)
                 .setMinUpdateDistanceMeters(1)

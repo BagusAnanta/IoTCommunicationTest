@@ -14,13 +14,6 @@ public class MqttHandler {
 
     public void connect(String brokerUrl, String clientId, String topicStatus){
         try{
-            /*MemoryPersistence persistence = new MemoryPersistence();
-            client = new MqttClient(brokerUrl,clientId,persistence);
-
-            MqttConnectOptions connectOptions = new MqttConnectOptions();
-            connectOptions.setCleanSession(true);
-
-            client.connect(connectOptions);*/
 
             MemoryPersistence persistence = new MemoryPersistence();
             client = new MqttClient(brokerUrl,clientId,persistence);
@@ -38,22 +31,6 @@ public class MqttHandler {
         }
     }
 
-    public void connectStatus(String brokerUrl, String clientId, String topic){
-        try{
-            MemoryPersistence persistence = new MemoryPersistence();
-            client = new MqttClient(brokerUrl,clientId,persistence);
-
-            MqttConnectOptions connectOptions = new MqttConnectOptions();
-            connectOptions.setCleanSession(true);
-            connectOptions.setAutomaticReconnect(true);
-            connectOptions.setWill(topic,"offline".getBytes(),0,true);
-
-            client.connect(connectOptions);
-            client.publish(topic,"online".getBytes(),0,true);
-        } catch (MqttException e) {
-            e.printStackTrace();
-        }
-    }
 
     public void disconnected(){
         try {
