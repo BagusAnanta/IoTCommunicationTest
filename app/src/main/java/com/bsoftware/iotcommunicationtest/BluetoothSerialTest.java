@@ -250,7 +250,11 @@ public class BluetoothSerialTest extends AppCompatActivity {
                     return;
                 }
                 startActivityForResult(enableBluetooth, REQUEST_ENABLE_BT);
-                scanBluetoothAddress();
+                // check this why after permission not scan a device (we try this method for check scan and connect a application)
+                Log.d("On Enable State","You in enable state");
+                Toast.makeText(activity, "On state ", Toast.LENGTH_SHORT).show();
+                // scanBluetoothAddress();
+                connectFromAddressandName();
             } else {
                 // if bluetooth enable
                 scanBluetoothAddress();
@@ -331,8 +335,8 @@ public class BluetoothSerialTest extends AppCompatActivity {
                                 throw new RuntimeException(ex);
                             }
 
-
-                            if(bluetoothSocket.isConnected()){
+                            // if a bluetooth socket not connection to... we close app and finish
+                            if(!bluetoothSocket.isConnected()){
                                 Toast.makeText(activity, "Bluetooth Device not connecting app shutdown", Toast.LENGTH_SHORT).show();
                                 try {
                                     bluetoothSocket.close();
@@ -524,6 +528,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 return;
             }
+            // you may scan a bluetooth in here
         } else {
             // if GPS disable
             requestEnableGPS();
@@ -588,6 +593,11 @@ public class BluetoothSerialTest extends AppCompatActivity {
     /*------------------------------------------------------------------------------------------------------
      * ------------------------------------------END GPS AREA ------------------------------------------------*/
 
+    private void notificationAction(){
+        Intent intent = new Intent(this,BluetoothSerialTest.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        // pending intent in here
+    }
 
     @Override
     protected void onDestroy() {

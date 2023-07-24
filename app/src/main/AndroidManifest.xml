@@ -18,14 +18,15 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/ambulance_polsri_icon"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.IoTCommunicationTest"
         tools:targetApi="31">
         <activity
             android:name=".BluetoothSerialTest"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
