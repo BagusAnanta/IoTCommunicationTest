@@ -14,20 +14,20 @@ public class JSONFormatter {
     private float heartrate;
     private float spo2;
 
-    public String Writedata(Float heartRate, Float spo2, String Longitude, String Latitude){
+    public String Writedata(Float heartRate, Float spo2, Float Longitude, Float Latitude){
         JSONObject object = new JSONObject();
 
         /*We make a like list for fill a longitude and latitude data*/
-        List<String> locationList = new ArrayList<>();
+        List<Float> locationList = new ArrayList<>();
         locationList.add(Longitude);
         locationList.add(Latitude);
         JSONArray locationjson = new JSONArray(locationList);
 
         String finaldata = "";
         try{
-            object.put("HR",heartRate);
-            object.put("SPO2",spo2);
-            object.put("GPS",locationjson);
+            object.put("hr",heartRate);
+            object.put("spo2",spo2);
+            object.put("gps",locationjson);
 
             finaldata = object.toString();
         } catch (JSONException e) {
@@ -66,7 +66,7 @@ public class JSONFormatter {
     }
 
     public void setSpo2(float spo2) {
-        this.spo2 = spo2;
+        this.spo2 = (int) spo2;
     }
 
 

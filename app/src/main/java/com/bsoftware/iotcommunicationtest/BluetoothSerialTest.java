@@ -137,8 +137,8 @@ public class BluetoothSerialTest extends AppCompatActivity {
     private double longitude;
     private double latitude;
 
-    private String longitudeStr;
-    private String latitudeStr;
+    private float longitudeStr;
+    private float latitudeStr;
 
     String fetched_address = "";
 
@@ -153,7 +153,8 @@ public class BluetoothSerialTest extends AppCompatActivity {
         // set up webview
         WebView webviewInterface = (WebView) findViewById(R.id.webviewint);
         // for test, if a web done, dont forget change this
-        webviewInterface.loadUrl("https://teamrrq.com/");
+        webviewInterface.loadUrl("https://teknikkomputer.polsri.ac.id/");
+        //webviewInterface.loadUrl("192.168.43.31:80");
 
 
         // permission
@@ -181,7 +182,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 String receiverMessage = message.obj.toString();
                 jsonFormatter.ParsingData(receiverMessage);
                 // and set data in here
-                publishMessage(Topic_patient,jsonFormatter.Writedata(jsonFormatter.getHeartrate(),jsonFormatter.getSpo2(),getLongitudeStr(),getLatitudeStr()));
+                publishMessage(Topic_patient,jsonFormatter.Writedata(jsonFormatter.getHeartrate(),jsonFormatter.getSpo2(),getLatitudeStr(),getLongitudeStr()));
 
             }
             return true;
@@ -489,20 +490,12 @@ public class BluetoothSerialTest extends AppCompatActivity {
         latitude = lastlocation.getLatitude();
         longitude = lastlocation.getLongitude();
 
-        // if a setLatitudeStr() get a null value
-        // pens default location = -7.275840108614498, 112.79375167129476
+        if(lastlocation.getLatitude() == 0 && lastlocation.getLongitude() == 0){
+            // set default start  data
+            setLatitudeStr("-2.983316");// -> must s_lat
+            setLongitudeStr("104.73318");// -> must s_log
+        }
 
-      /*  if(getLatitudeStr().equals("null") && getLongitudeStr().equals("null") || s_lat.equals("null") && s_log.equals("null")){
-            // if a data latitude and longitude is null we set a pens format
-            // pens default location = -7.275840108614498, 112.79375167129476
-            setLatitudeStr("-7.2758401");
-            setLongitudeStr("112.793751");
-        } else {
-            // if a data not null we get from s_lat and s_log
-            // we can set a data in here
-            setLatitudeStr(s_lat);// -> must s_lat
-            setLongitudeStr(s_log);// -> must s_log
-        }*/
 
         setLatitudeStr(s_lat);// -> must s_lat
         setLongitudeStr(s_log);// -> must s_log
@@ -549,9 +542,9 @@ public class BluetoothSerialTest extends AppCompatActivity {
             }
         };
 
-        locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY,1000) // -> 5000
+        locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY,5000) // -> 5000
                 .setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
-                .setMinUpdateIntervalMillis(500)
+                .setMinUpdateIntervalMillis(100) // default -> 500
                 .setMinUpdateDistanceMeters(1)
                 .setWaitForAccurateLocation(true)
                 .build();
@@ -576,20 +569,20 @@ public class BluetoothSerialTest extends AppCompatActivity {
         builder.show();
     }
 
-    public String getLongitudeStr() {
+    public Float getLongitudeStr() {
         return longitudeStr;
     }
 
     public void setLongitudeStr(String longitudeStr) {
-        this.longitudeStr = longitudeStr;
+        this.longitudeStr = Float.parseFloat(longitudeStr);
     }
 
-    public String getLatitudeStr() {
+    public Float getLatitudeStr() {
         return latitudeStr;
     }
 
     public void setLatitudeStr(String latitudeStr) {
-        this.latitudeStr = latitudeStr;
+        this.latitudeStr = Float.parseFloat(latitudeStr);
     }
 
     /*------------------------------------------------------------------------------------------------------
