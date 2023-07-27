@@ -387,28 +387,33 @@ public class BluetoothSerialTest extends AppCompatActivity {
 
                 while(true) {
                     try {
-                        // nullpointerexception pottentially
-                        bytes = inputStream.read(buffer);
-                        receiverMessage = new String(buffer, 0,bytes);
-                        Log.d("Message", receiverMessage);
-                        Message readMsg = handler.obtainMessage(MESSAGE_READ, bytes, -1, receiverMessage);
-                        readMsg.sendToTarget();
-                        Log.d("FinalMessage", String.valueOf(readMsg));
-                    } catch (IOException e) {
-                        Log.e("InputStream Connection", "InputStream Connection fail", e);
-                        // try to rescan a bluetooth and we can give connection time in here in 10 second
-                        scanBluetoothAddress();
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                if(!bluetoothSocket.isConnected()){
-                                    status.setText("Reconnecting");
-                                } else {
-                                    status.setText("Connecting");
+                        try {
+                            // nullpointerexception pottentially
+                            bytes = inputStream.read(buffer);
+                            receiverMessage = new String(buffer, 0, bytes);
+                            Log.d("Message", receiverMessage);
+                            Message readMsg = handler.obtainMessage(MESSAGE_READ, bytes, -1, receiverMessage);
+                            readMsg.sendToTarget();
+                            Log.d("FinalMessage", String.valueOf(readMsg));
+                        } catch (IOException e) {
+                            Log.e("InputStream Connection", "InputStream Connection fail", e);
+                            // try to rescan a bluetooth and we can give connection time in here in 10 second
+                            scanBluetoothAddress();
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (!bluetoothSocket.isConnected()) {
+                                        status.setText("Reconnecting");
+                                    } else {
+                                        status.setText("Connecting");
+                                    }
                                 }
-                            }
-                        });
-                        // break;
+                            });
+                            // break;
+                        }
+                    } catch (NullPointerException e){
+                        // if a app null we restart a app
+                       restartApp();
                     }
                 }
             }

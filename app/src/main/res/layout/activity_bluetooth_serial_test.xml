@@ -95,9 +95,9 @@
 
                         <ImageView
                             android:id="@+id/heartrate_icon"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@mipmap/ambulance_polsri_icon"/>
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:src="@drawable/baseline_favorite_24"/>
 
                         <TextView
                             android:id="@+id/heartrate_text"
@@ -150,9 +150,9 @@
 
                         <ImageView
                             android:id="@+id/spo_icon"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@mipmap/ambulance_polsri_icon"/>
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:src="@drawable/spo2_logo"/>
 
                         <TextView
                             android:id="@+id/spo_text"
@@ -191,7 +191,7 @@
                 app:cardCornerRadius="10dp"
                 app:cardBackgroundColor="@android:color/background_light"
                 app:strokeWidth="5dp"
-                app:strokeColor="@android:color/holo_green_dark">
+                app:strokeColor="@android:color/darker_gray">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -205,9 +205,9 @@
 
                         <ImageView
                             android:id="@+id/lat_icon"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@mipmap/ambulance_polsri_icon"/>
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:src="@drawable/log_lat_location"/>
 
                         <TextView
                             android:id="@+id/lat_text"
@@ -215,7 +215,7 @@
                             android:layout_height="wrap_content"
                             android:text="Latitude"
                             android:textStyle="bold"
-                            android:textColor="@android:color/holo_green_dark"
+                            android:textColor="@android:color/darker_gray"
                             android:textSize="20sp"
                             android:layout_marginStart="10dp" />
 
@@ -229,7 +229,7 @@
                         android:text="@string/default_num"
                         android:textSize="40sp"
                         android:textStyle="bold"
-                        android:textColor="@android:color/holo_green_dark"
+                        android:textColor="@android:color/black"
                         android:layout_marginTop="10dp"/>
                 </LinearLayout>
 
@@ -246,7 +246,7 @@
                 app:cardCornerRadius="10dp"
                 app:cardBackgroundColor="@android:color/background_light"
                 app:strokeWidth="5dp"
-                app:strokeColor="@android:color/holo_green_dark">
+                app:strokeColor="@android:color/darker_gray">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -260,9 +260,9 @@
 
                         <ImageView
                             android:id="@+id/log_icon"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@mipmap/ambulance_polsri_icon"/>
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:src="@drawable/log_lat_location"/>
 
                         <TextView
                             android:id="@+id/log_text"
@@ -270,7 +270,7 @@
                             android:layout_height="wrap_content"
                             android:text="Longitude"
                             android:textStyle="bold"
-                            android:textColor="@android:color/holo_green_dark"
+                            android:textColor="@android:color/darker_gray"
                             android:textSize="20sp"
                             android:layout_marginStart="10dp" />
 
@@ -284,7 +284,7 @@
                         android:text="@string/default_num"
                         android:textSize="40sp"
                         android:textStyle="bold"
-                        android:textColor="@android:color/holo_green_dark"
+                        android:textColor="@android:color/black"
                         android:layout_marginTop="10dp"/>
                 </LinearLayout>
 
