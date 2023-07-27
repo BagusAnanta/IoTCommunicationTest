@@ -4,7 +4,6 @@ import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,13 +11,10 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
-import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Address;
@@ -35,7 +31,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.provider.Settings;
 import android.util.Log;
-import android.webkit.WebView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -53,20 +48,16 @@ import com.google.android.gms.location.SettingsClient;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 @RequiresApi(api = Build.VERSION_CODES.S)
 public class BluetoothSerialTest extends AppCompatActivity {
@@ -291,8 +282,6 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 // if you use another device like more esp32 you must change a Bluetooth MAC Address
                 if (deviceName.equals("AMBULANCE POLSRI") && deviceHardwareAddress.equals("3C:61:05:3F:61:16")) {
                     connectFromAddressandName();
-                } else {
-                    scanBluetoothAddress();
                 }
             }
         }
