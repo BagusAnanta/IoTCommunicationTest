@@ -18,6 +18,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Address;
@@ -101,8 +102,9 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 tellPermission(permissionList);
             } else if (permission_count > 0) {
                 showPermissionDialog();
-            } else {
+            } else if(permissionList.size() == 0 && permission_count == 0) {
                 Log.d("Permission Granted", "All permission Granted");
+
             }
         }
     });
@@ -120,7 +122,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
     private final String SPP_UUID = "00001101-0000-1000-8000-00805F9B34FB";
     private static final int MESSAGE_READ = 0;
 
-    private static final String BrokerURI = "tcp://test.mosquitto.org:1883";
+    private static final String BrokerURI = "tcp://192.3.113.195:1883";
     private static final String ClientID = "mqttv311";
     private static final String Topic_status = "BG1003AM/status";
     private static final String Topic_patient = "BG1003AM/patient";
@@ -133,12 +135,13 @@ public class BluetoothSerialTest extends AppCompatActivity {
     private Location lastlocation;
     private SettingsClient settingsClient;
     private int REQUEST_PERMISSION = 1;
-    private Activity activity;
     private double longitude;
     private double latitude;
 
     private float longitudeStr;
     private float latitudeStr;
+
+    private TextView status,heartRate,spo2,latitude_text,longitude_text;
 
     String fetched_address = "";
 
@@ -147,33 +150,41 @@ public class BluetoothSerialTest extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth_serial_test);
 
+        status = findViewById(R.id.status_text);
+        heartRate = findViewById(R.id.heartrate_number);
+        spo2 = findViewById(R.id.spo_number);
+        latitude_text = findViewById(R.id.lat_number);
+        longitude_text = findViewById(R.id.log_number);
+
         // Check connection
         checkInternetConnection(this);
 
         // set up webview
-        WebView webviewInterface = (WebView) findViewById(R.id.webviewint);
+       /* WebView webviewInterface = (WebView) findViewById(R.id.webviewint);
         // for test, if a web done, dont forget change this
-        webviewInterface.loadUrl("https://teknikkomputer.polsri.ac.id/");
+        webviewInterface.loadUrl("https://teknikkomputer.polsri.ac.id/");*/
         //webviewInterface.loadUrl("192.168.43.31:80");
 
 
         // permission
         permissionList.addAll(Arrays.asList(permission));
         tellPermission(permissionList);
-        initBluetooth();
 
         // Mqtt Test
         mqttHandler = new MqttHandler();
         mqttHandler.connect(BrokerURI,ClientID,Topic_status);
+        // and we init a bluetooh too
+        initBluetooth();
 
         //GPS
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         // check permission and turn on GPS if disable
         checkLocationPermission();
-        // we init in here lah
+        // we init GPS in here lah
         init();
 
     }
+
 
     private final Handler handler = new Handler(new Handler.Callback() {
         @Override
@@ -182,8 +193,12 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 String receiverMessage = message.obj.toString();
                 jsonFormatter.ParsingData(receiverMessage);
                 // and set data in here
-                publishMessage(Topic_patient,jsonFormatter.Writedata(jsonFormatter.getHeartrate(),jsonFormatter.getSpo2(),getLatitudeStr(),getLongitudeStr()));
-
+                publishMessage(Topic_patient,jsonFormatter.Writedata("BG1003AM",jsonFormatter.getHeartrate(),jsonFormatter.getSpo2(),getLatitudeStr(),getLongitudeStr()));
+                // set text in here
+                heartRate.setText(String.valueOf(jsonFormatter.getHeartrate()));
+                spo2.setText(String.valueOf(jsonFormatter.getSpo2()));
+                latitude_text.setText(String.valueOf(getLatitudeStr()));
+                longitude_text.setText(String.valueOf(getLongitudeStr()));
             }
             return true;
         }
@@ -250,11 +265,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
                     return;
                 }
                 startActivityForResult(enableBluetooth, REQUEST_ENABLE_BT);
-                // check this why after permission not scan a device (we try this method for check scan and connect a application)
-                Log.d("On Enable State","You in enable state");
-                Toast.makeText(activity, "On state ", Toast.LENGTH_SHORT).show();
-                // scanBluetoothAddress();
-                connectFromAddressandName();
+                scanBluetoothAddress();
             } else {
                 // if bluetooth enable
                 scanBluetoothAddress();
@@ -277,12 +288,11 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 Log.d("Bluetooth Name :", deviceName);
                 Log.d("Bluetooth Address :", deviceHardwareAddress);
 
+                // if you use another device like more esp32 you must change a Bluetooth MAC Address
                 if (deviceName.equals("AMBULANCE POLSRI") && deviceHardwareAddress.equals("3C:61:05:3F:61:16")) {
                     connectFromAddressandName();
                 } else {
-                    // if a device not found we rescan a bluetooth
                     scanBluetoothAddress();
-                    Toast.makeText(activity, "Rescan A bluetooth please wait", Toast.LENGTH_SHORT).show();
                 }
             }
         }
@@ -318,14 +328,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
                             } catch (StackOverflowError stackOverflowError){
                                 // if a stackoverflow found we must reset a app of finish a program in here
                                 if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
-                                    Toast.makeText(activity, "Application close restart app", Toast.LENGTH_SHORT).show();
-                                    // for restart a app
-                                    Context context = getApplicationContext();
-                                    PackageManager packageManager = context.getPackageManager();
-                                    Intent intent = packageManager.getLaunchIntentForPackage(context.getPackageName());
-                                    Intent mainIntent = Intent.makeRestartActivityTask(intent.getComponent());
-                                    context.startActivity(mainIntent);
-                                    Runtime.getRuntime().exit(0);
+                                   restartApp();
                                 } else {
                                     // if below android Q we finish a program
                                     finish();
@@ -337,7 +340,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
 
                             // if a bluetooth socket not connection to... we close app and finish
                             if(!bluetoothSocket.isConnected()){
-                                Toast.makeText(activity, "Bluetooth Device not connecting app shutdown", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(BluetoothSerialTest.this, "Bluetooth Device not connecting app shutdown", Toast.LENGTH_SHORT).show();
                                 try {
                                     bluetoothSocket.close();
                                 } catch (IOException ex) {
@@ -361,6 +364,11 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 @Override
                 public void run() {
                     Log.d("Connection Statue","Connecting into ESP32");
+                    if(bluetoothSocket.isConnected()){
+                        status.setText("Connecting");
+                    } else {
+                        status.setText("Disconnecting");
+                    }
                 }
             });
         } catch (IOException e) {
@@ -379,6 +387,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
 
                 while(true) {
                     try {
+                        // nullpointerexception pottentially
                         bytes = inputStream.read(buffer);
                         receiverMessage = new String(buffer, 0,bytes);
                         Log.d("Message", receiverMessage);
@@ -387,11 +396,35 @@ public class BluetoothSerialTest extends AppCompatActivity {
                         Log.d("FinalMessage", String.valueOf(readMsg));
                     } catch (IOException e) {
                         Log.e("InputStream Connection", "InputStream Connection fail", e);
-                        break;
+                        // try to rescan a bluetooth and we can give connection time in here in 10 second
+                        scanBluetoothAddress();
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if(!bluetoothSocket.isConnected()){
+                                    status.setText("Reconnecting");
+                                } else {
+                                    status.setText("Connecting");
+                                }
+                            }
+                        });
+                        // break;
                     }
                 }
             }
         }).start();
+    }
+
+    @Override
+    public void startActivityForResult(@NonNull Intent intent, int requestCode) {
+        super.startActivityForResult(intent, requestCode);
+        if(requestCode == REQUEST_ENABLE_BT){
+            // if a request code equals EQUALS_ENABLE_BT
+            Toast.makeText(this, "startActivityResult call", Toast.LENGTH_SHORT).show();
+            if(requestCode == RESULT_OK){
+                // initBluetooth();
+            }
+        }
     }
 
     /*---------------------------------------------------------------------------------------------------------------------------
@@ -433,7 +466,6 @@ public class BluetoothSerialTest extends AppCompatActivity {
     private void publishMessage(String topic, String JSONmessage){
         // we send a json data format
         MqttMessage messageJSON = new MqttMessage(JSONmessage.getBytes());
-        Toast.makeText(this, "Publishing message: " + messageJSON, Toast.LENGTH_SHORT).show();
         mqttHandler.publish(topic, String.valueOf(messageJSON));
     }
     /*---------------------------------------------------------------------------------------------------------
@@ -444,10 +476,10 @@ public class BluetoothSerialTest extends AppCompatActivity {
 
     public void checkLocationPermission() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_FINE_LOCATION)) {
-                ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_PERMISSION);
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_PERMISSION);
             } else {
-                ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_PERMISSION);
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_PERMISSION);
             }
         } else {
             // we can turn on a GPS in here
@@ -549,7 +581,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
 
         locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY,5000) // -> 5000
                 .setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
-                .setMinUpdateIntervalMillis(100) // default -> 500
+                .setMinUpdateIntervalMillis(500) // default -> 500
                 .setMinUpdateDistanceMeters(1)
                 .setWaitForAccurateLocation(true)
                 .build();
@@ -593,11 +625,22 @@ public class BluetoothSerialTest extends AppCompatActivity {
     /*------------------------------------------------------------------------------------------------------
      * ------------------------------------------END GPS AREA ------------------------------------------------*/
 
-    private void notificationAction(){
-        Intent intent = new Intent(this,BluetoothSerialTest.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        // pending intent in here
+    /*------------------------------------------------------------------------------------------------------
+     * ------------------------------------------RESTART APP ------------------------------------------------*/
+
+    private void restartApp(){
+        Toast.makeText(BluetoothSerialTest.this, "Application close restart app", Toast.LENGTH_SHORT).show();
+        // for restart a app
+        Context context = getApplicationContext();
+        PackageManager packageManager = context.getPackageManager();
+        Intent intent = packageManager.getLaunchIntentForPackage(context.getPackageName());
+        Intent mainIntent = Intent.makeRestartActivityTask(intent.getComponent());
+        context.startActivity(mainIntent);
+        Runtime.getRuntime().exit(0);
     }
+
+    /*------------------------------------------------------------------------------------------------------
+     * ------------------------------------------END RESTART APP ------------------------------------------------*/
 
     @Override
     protected void onDestroy() {

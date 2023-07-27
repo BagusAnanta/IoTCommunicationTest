@@ -6,11 +6,297 @@
     android:layout_height="match_parent"
     tools:context=".BluetoothSerialTest">
 
-    <WebView
-        android:id="@+id/webviewint"
+    
+    <LinearLayout
+        android:id="@+id/indicator_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="wrap_content"
+        android:layout_margin="5dp"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Status :"
+                android:textColor="@color/white"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/status_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:text="Offline"
+                android:textColor="@color/white"
+                android:textStyle="bold"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/no_polisi"
+                android:textColor="@color/white"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/no_polisi_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:text="@string/nomor_polisi"
+                android:textColor="@color/white"
+                android:textStyle="bold"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scrollbars="vertical"
+        android:layout_below="@id/indicator_view">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/heartrate_view"
+                android:layout_width="match_parent"
+                android:layout_height="150dp"
+                android:layout_below="@id/indicator_view"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
+                app:cardCornerRadius="10dp"
+                app:cardBackgroundColor="@android:color/background_light"
+                app:strokeWidth="5dp"
+                app:strokeColor="@android:color/holo_red_dark">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
+                        <ImageView
+                            android:id="@+id/heartrate_icon"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@mipmap/ambulance_polsri_icon"/>
+
+                        <TextView
+                            android:id="@+id/heartrate_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/heart_rate_bpm"
+                            android:textStyle="bold"
+                            android:textColor="@android:color/holo_red_dark"
+                            android:textSize="20sp"
+                            android:layout_marginStart="10dp" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/heartrate_number"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="20dp"
+                        android:text="@string/default_num"
+                        android:textSize="40sp"
+                        android:textStyle="bold"
+                        android:textColor="@android:color/holo_red_dark"
+                        android:layout_marginTop="10dp"/>
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/spo_view"
+                android:layout_width="match_parent"
+                android:layout_height="150dp"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
+                android:layout_marginTop="10dp"
+                android:layout_below="@id/heartrate_view"
+                app:cardCornerRadius="10dp"
+                app:cardBackgroundColor="@android:color/background_light"
+                app:strokeWidth="5dp"
+                app:strokeColor="@android:color/holo_green_dark">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
+                        <ImageView
+                            android:id="@+id/spo_icon"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@mipmap/ambulance_polsri_icon"/>
+
+                        <TextView
+                            android:id="@+id/spo_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="SPO2 (%)"
+                            android:textStyle="bold"
+                            android:textColor="@android:color/holo_green_dark"
+                            android:textSize="20sp"
+                            android:layout_marginStart="10dp" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/spo_number"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="20dp"
+                        android:text="@string/default_num"
+                        android:textSize="40sp"
+                        android:textStyle="bold"
+                        android:textColor="@android:color/holo_green_dark"
+                        android:layout_marginTop="10dp"/>
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/lat_view"
+                android:layout_width="match_parent"
+                android:layout_height="150dp"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
+                android:layout_marginTop="10dp"
+                android:layout_below="@id/spo_view"
+                app:cardCornerRadius="10dp"
+                app:cardBackgroundColor="@android:color/background_light"
+                app:strokeWidth="5dp"
+                app:strokeColor="@android:color/holo_green_dark">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
+                        <ImageView
+                            android:id="@+id/lat_icon"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@mipmap/ambulance_polsri_icon"/>
+
+                        <TextView
+                            android:id="@+id/lat_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Latitude"
+                            android:textStyle="bold"
+                            android:textColor="@android:color/holo_green_dark"
+                            android:textSize="20sp"
+                            android:layout_marginStart="10dp" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/lat_number"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="20dp"
+                        android:text="@string/default_num"
+                        android:textSize="40sp"
+                        android:textStyle="bold"
+                        android:textColor="@android:color/holo_green_dark"
+                        android:layout_marginTop="10dp"/>
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/log_view"
+                android:layout_width="match_parent"
+                android:layout_height="150dp"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
+                android:layout_marginTop="10dp"
+                android:layout_below="@id/lat_view"
+                app:cardCornerRadius="10dp"
+                app:cardBackgroundColor="@android:color/background_light"
+                app:strokeWidth="5dp"
+                app:strokeColor="@android:color/holo_green_dark">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
+                        <ImageView
+                            android:id="@+id/log_icon"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@mipmap/ambulance_polsri_icon"/>
+
+                        <TextView
+                            android:id="@+id/log_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Longitude"
+                            android:textStyle="bold"
+                            android:textColor="@android:color/holo_green_dark"
+                            android:textSize="20sp"
+                            android:layout_marginStart="10dp" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/log_number"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="20dp"
+                        android:text="@string/default_num"
+                        android:textSize="40sp"
+                        android:textStyle="bold"
+                        android:textColor="@android:color/holo_green_dark"
+                        android:layout_marginTop="10dp"/>
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
 
 
 
+        </LinearLayout>
+    </ScrollView>
+
+
+
+
+    
 </RelativeLayout>

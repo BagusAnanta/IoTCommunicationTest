@@ -14,7 +14,7 @@ public class JSONFormatter {
     private float heartrate;
     private float spo2;
 
-    public String Writedata(Float heartRate, Float spo2, Float Longitude, Float Latitude){
+    public String Writedata(String id ,int heartRate, int spo2, Float Longitude, Float Latitude){
         JSONObject object = new JSONObject();
 
         /*We make a like list for fill a longitude and latitude data*/
@@ -25,6 +25,7 @@ public class JSONFormatter {
 
         String finaldata = "";
         try{
+            object.put("id",id);
             object.put("hr",heartRate);
             object.put("spo2",spo2);
             object.put("gps",locationjson);
@@ -53,16 +54,16 @@ public class JSONFormatter {
         }
     }
 
-    public float getHeartrate() {
-        return heartrate;
+    public int getHeartrate() {
+        return (int) heartrate;
     }
 
     public void setHeartrate(float heartrate) {
-        this.heartrate = heartrate;
+        this.heartrate = (int) heartrate;
     }
 
-    public float getSpo2() {
-        return spo2;
+    public int getSpo2() {
+        return (int) spo2;
     }
 
     public void setSpo2(float spo2) {

@@ -1,16 +1,17 @@
 package com.bsoftware.iotcommunicationtest;
 
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
 import  org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
-import java.util.ArrayList;
-
 public class MqttHandler {
 
     private MqttClient client;
+    private String will;
 
     public void connect(String brokerUrl, String clientId, String topicStatus){
         try{
@@ -49,15 +50,12 @@ public class MqttHandler {
         }
     }
 
-    private void testTopicpublish(){
-        ArrayList<String> topic = new ArrayList<>();
-        // fill a topic
-        topic.add(0,"BG1001AM/patient");
-        topic.add(1,"BG1001AM/patient");
-        topic.add(2,"BG1003AM/patient");
-
-        /*I don't know how get a police number from web, but we can try a get
-        * and now i confuce how get a topic from a web */
-
+    public String getWill() {
+        return will;
     }
+
+    public void setWill(String will) {
+        this.will = will;
+    }
+
 }
