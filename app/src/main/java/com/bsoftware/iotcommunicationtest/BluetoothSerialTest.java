@@ -256,6 +256,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
                     return;
                 }
                 startActivityForResult(enableBluetooth, REQUEST_ENABLE_BT);
+                // check a scanBluetoothAddress in a background is running ?
                 scanBluetoothAddress();
             } else {
                 // if bluetooth enable
