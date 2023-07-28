@@ -261,7 +261,9 @@ public class BluetoothSerialTest extends AppCompatActivity {
                     return;
                 }
                 startActivityForResult(enableBluetooth, REQUEST_ENABLE_BT);
-                scanBluetoothAddress();
+                if(bluetoothAdapter.isEnabled()){
+                    scanBluetoothAddress();
+                }
             } else {
                 // if bluetooth enable
                 scanBluetoothAddress();
@@ -296,7 +298,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
 
     private void connectFromAddressandName() {
 
-        // we connect a device use Address
+        // we connect a device use MAC Address
         BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceHardwareAddress);
 
         try {
@@ -313,11 +315,11 @@ public class BluetoothSerialTest extends AppCompatActivity {
                     @Override
                     public void run() {
                         while(!bluetoothSocket.isConnected()){
-                            // we try a thead in 10 second and if a not connect we finish
+                            // we try a thread in 10 second and if a not connect we finish
                             // reconnecting in 10 second
                             Log.d("BluetoothSocket","Reconnection condition");
                             // reconnecting again
-                            /*But if you use a recursive fucntion you must handle a stack overflow exception*/
+                            /*But if you use a recursive function you must handle a stack overflow exception*/
                             try{
                                 connectFromAddressandName();
                                 Thread.sleep(5000); // 5 second thread
