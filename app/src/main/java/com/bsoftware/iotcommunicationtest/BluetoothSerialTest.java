@@ -164,12 +164,13 @@ public class BluetoothSerialTest extends AppCompatActivity {
         mqttHandler = new MqttHandler();
         mqttHandler.connect(BrokerURI,ClientID,Topic_status);
         // and we init a bluetooh too
+        initBluetooth();
 
-        if(!bluetoothAdapter.isEnabled()){
+        /*if(!bluetoothAdapter.isEnabled()){
             initBluetooth();
         } else {
             scanBluetoothAddress();
-        }
+        }*/
 
         //GPS
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
@@ -261,9 +262,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
                     return;
                 }
                 startActivityForResult(enableBluetooth, REQUEST_ENABLE_BT);
-                if(bluetoothAdapter.isEnabled()){
-                    scanBluetoothAddress();
-                }
+                scanBluetoothAddress();
             } else {
                 // if bluetooth enable
                 scanBluetoothAddress();
@@ -364,10 +363,10 @@ public class BluetoothSerialTest extends AppCompatActivity {
                     Log.d("Connection Statue","Connecting into ESP32");
                     if(bluetoothSocket.isConnected()){
                         Toast.makeText(BluetoothSerialTest.this, "Connected", Toast.LENGTH_SHORT).show();
-                        status.setText("Connecting");
+                        status.setText("Connected");
                     } else {
                         Toast.makeText(BluetoothSerialTest.this, "Disconencted", Toast.LENGTH_SHORT).show();
-                        status.setText("Disconnecting");
+                        status.setText("Disconnect");
                     }
                 }
             });
@@ -407,7 +406,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
                                         status.setText("Reconnecting");
                                     } else {
                                         Toast.makeText(BluetoothSerialTest.this, "Connected", Toast.LENGTH_SHORT).show();
-                                        status.setText("Connecting");
+                                        status.setText("Connected");
                                     }
                                 }
                             });
@@ -415,7 +414,9 @@ public class BluetoothSerialTest extends AppCompatActivity {
                         }
                     } catch (NullPointerException e){
                         // if a app null we restart a app
-                       restartApp();
+                       // restartApp();
+                        Toast.makeText(BluetoothSerialTest.this, "Application Out, please reopen again", Toast.LENGTH_SHORT).show();
+                        finish();
                     }
                 }
             }
