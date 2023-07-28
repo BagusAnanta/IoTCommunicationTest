@@ -95,7 +95,6 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 showPermissionDialog();
             } else if(permissionList.size() == 0 && permission_count == 0) {
                 Log.d("Permission Granted", "All permission Granted");
-
             }
         }
     });
@@ -165,7 +164,12 @@ public class BluetoothSerialTest extends AppCompatActivity {
         mqttHandler = new MqttHandler();
         mqttHandler.connect(BrokerURI,ClientID,Topic_status);
         // and we init a bluetooh too
-        initBluetooth();
+
+        if(!bluetoothAdapter.isEnabled()){
+            initBluetooth();
+        } else {
+            scanBluetoothAddress();
+        }
 
         //GPS
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
@@ -242,6 +246,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
     /*---------------------------------------------------------------------------------------------------------------------------
      * ------------------------------------------------BLUETOOH CODE CONNECTION---------------------------------------------------*/
 
+
     private void initBluetooth() {
         if (bluetoothAdapter == null) {
             Toast.makeText(this, "You Device not Support a Bluetooth", Toast.LENGTH_SHORT).show();
@@ -256,7 +261,6 @@ public class BluetoothSerialTest extends AppCompatActivity {
                     return;
                 }
                 startActivityForResult(enableBluetooth, REQUEST_ENABLE_BT);
-                // check a scanBluetoothAddress in a background is running ?
                 scanBluetoothAddress();
             } else {
                 // if bluetooth enable
@@ -281,7 +285,9 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 Log.d("Bluetooth Address :", deviceHardwareAddress);
 
                 // if you use another device like more esp32 you must change a Bluetooth MAC Address
-                if (deviceName.equals("AMBULANCE POLSRI") && deviceHardwareAddress.equals("3C:61:05:3F:61:16")) {
+                // old address : 3C:61:05:3F:61:16
+                // new esp32 address : A8:42:E3:49:AC:1A
+                if (deviceName.equals("AMBULANCE POLSRI") && deviceHardwareAddress.equals("A8:42:E3:49:AC:1A")) {
                     connectFromAddressandName();
                 }
             }
@@ -314,7 +320,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
                             /*But if you use a recursive fucntion you must handle a stack overflow exception*/
                             try{
                                 connectFromAddressandName();
-                                Thread.sleep(10000);
+                                Thread.sleep(5000); // 5 second thread
                             } catch (StackOverflowError stackOverflowError){
                                 // if a stackoverflow found we must reset a app of finish a program in here
                                 if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
@@ -355,8 +361,10 @@ public class BluetoothSerialTest extends AppCompatActivity {
                 public void run() {
                     Log.d("Connection Statue","Connecting into ESP32");
                     if(bluetoothSocket.isConnected()){
+                        Toast.makeText(BluetoothSerialTest.this, "Connected", Toast.LENGTH_SHORT).show();
                         status.setText("Connecting");
                     } else {
+                        Toast.makeText(BluetoothSerialTest.this, "Disconencted", Toast.LENGTH_SHORT).show();
                         status.setText("Disconnecting");
                     }
                 }
@@ -393,8 +401,10 @@ public class BluetoothSerialTest extends AppCompatActivity {
                                 @Override
                                 public void run() {
                                     if (!bluetoothSocket.isConnected()) {
+                                        Toast.makeText(BluetoothSerialTest.this, "Reconnecting", Toast.LENGTH_SHORT).show();
                                         status.setText("Reconnecting");
                                     } else {
+                                        Toast.makeText(BluetoothSerialTest.this, "Connected", Toast.LENGTH_SHORT).show();
                                         status.setText("Connecting");
                                     }
                                 }
@@ -415,10 +425,9 @@ public class BluetoothSerialTest extends AppCompatActivity {
         super.startActivityForResult(intent, requestCode);
         if(requestCode == REQUEST_ENABLE_BT){
             // if a request code equals EQUALS_ENABLE_BT
-            Toast.makeText(this, "startActivityResult call", Toast.LENGTH_SHORT).show();
-            if(requestCode == RESULT_OK){
-                // initBluetooth();
-            }
+           if(bluetoothAdapter.isEnabled()) {
+               scanBluetoothAddress();
+           }
         }
     }
 
