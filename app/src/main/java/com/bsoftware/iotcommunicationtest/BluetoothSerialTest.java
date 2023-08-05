@@ -14,8 +14,10 @@ import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -149,13 +151,6 @@ public class BluetoothSerialTest extends AppCompatActivity {
         // Check connection
         checkInternetConnection(this);
 
-        // set up webview
-       /* WebView webviewInterface = (WebView) findViewById(R.id.webviewint);
-        // for test, if a web done, dont forget change this
-        webviewInterface.loadUrl("https://teknikkomputer.polsri.ac.id/");*/
-        //webviewInterface.loadUrl("192.168.43.31:80");
-
-
         // permission
         permissionList.addAll(Arrays.asList(permission));
         tellPermission(permissionList);
@@ -166,18 +161,12 @@ public class BluetoothSerialTest extends AppCompatActivity {
         // and we init a bluetooh too
         initBluetooth();
 
-        /*if(!bluetoothAdapter.isEnabled()){
-            initBluetooth();
-        } else {
-            scanBluetoothAddress();
-        }*/
-
         //GPS
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         // check permission and turn on GPS if disable
         checkLocationPermission();
         // we init GPS in here lah
-        init();
+        initGPS();
 
     }
 
@@ -262,7 +251,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
                     return;
                 }
                 startActivityForResult(enableBluetooth, REQUEST_ENABLE_BT);
-                scanBluetoothAddress();
+                initBluetooth();
             } else {
                 // if bluetooth enable
                 scanBluetoothAddress();
@@ -320,8 +309,9 @@ public class BluetoothSerialTest extends AppCompatActivity {
                             // reconnecting again
                             /*But if you use a recursive function you must handle a stack overflow exception*/
                             try{
+                                // we gonna test in here
                                 connectFromAddressandName();
-                                Thread.sleep(5000); // 5 second thread
+                                Thread.sleep(10000); // 10 second thread
                             } catch (StackOverflowError stackOverflowError){
                                 // if a stackoverflow found we must reset a app of finish a program in here
                                 if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
@@ -365,8 +355,9 @@ public class BluetoothSerialTest extends AppCompatActivity {
                         Toast.makeText(BluetoothSerialTest.this, "Connected", Toast.LENGTH_SHORT).show();
                         status.setText("Connected");
                     } else {
-                        Toast.makeText(BluetoothSerialTest.this, "Disconencted", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(BluetoothSerialTest.this, "Disconnected", Toast.LENGTH_SHORT).show();
                         status.setText("Disconnect");
+                        mqttHandler.disconnected();
                     }
                 }
             });
@@ -429,7 +420,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
         if(requestCode == REQUEST_ENABLE_BT){
             // if a request code equals EQUALS_ENABLE_BT
            if(bluetoothAdapter.isEnabled()) {
-               scanBluetoothAddress();
+              scanBluetoothAddress();
            }
         }
     }
@@ -533,7 +524,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
         latitude = lastlocation.getLatitude();
         longitude = lastlocation.getLongitude();
 
-        if(lastlocation.getLatitude() == 0 && lastlocation.getLongitude() == 0){
+        if(lastlocation.getLatitude() == 0.0 && lastlocation.getLongitude() == 0.0){
             // set default start  data
             setLatitudeStr("-2.983316");// -> must s_lat
             setLongitudeStr("104.73318");// -> must s_log
@@ -575,7 +566,7 @@ public class BluetoothSerialTest extends AppCompatActivity {
         }
     }
 
-    public void init(){
+    public void initGPS(){
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         settingsClient = LocationServices.getSettingsClient(this);
         locationCallback = new LocationCallback() {
